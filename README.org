@@ -72,6 +72,11 @@ function.
   (global-set-key (kbd "C-x m") 'org-msg-new)
 #+end_src
 
+The ~org-msg-greeting-fmt~ can be customized to configure the default
+greeting message.  By default, this format contains a ~%s~ token that
+is automatically replaced with the first name of the person you are
+replying to as mailto link.
+
 In order to avoid CSS conflict, *org-msg* performs inline replacement
 when it generates the final HTML message.  See the
 ~org-msg-enforce-css~ variable to customize the style (and the default
