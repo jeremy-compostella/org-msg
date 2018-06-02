@@ -1,0 +1,78 @@
+*org-msg* is a [[https://www.gnu.org/software/emacs/][GNU/Emacs]] module making use of [[https://orgmode.org/][org-mode]] to write and
+reply to emails in a Outlook HTML friendly style.
+
+* Presentation
+
+Not that I really like the Outlook email style but in a work
+environment dominated by this software, it is good to be able to reply
+with the same style.  By default, if the original message is in text
+form ~org-msg~ keeps it that way and does not activate itself.  It
+allows to reply to developer mailing list (or any real technical
+people who knows how to handle text email) seamlessly.  If the
+original message is in the HTML form, it activates the ~org-msg~ mode
+on the reply buffer.
+
+*org-msg* is an derivation of [[https://orgmode.org/][org-mode]] in which some functionality of
+[[https://www.gnu.org/software/emacs/manual/html_mono/message.html][message-mode]] are imported or replicated. For instance, A *org-msg*
+buffer uses the same ~font-lock-keywords~ than [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][message-mode]] or the
+~TAB~ key while the cursor is in the header calls the
+~bbdb-complete-mail()~ function.
+
+For convenience, the original message is quoted below the ~--citation
+follows this line (read-only)--~ marker.  So you can easily refer to
+the original message.  However, the entire quoted text is read-only
+because *org-msg* does not support modification of the original
+content.
+
+Outlook email are really poor compared to what can be achieved by
+[[https://orgmode.org/][org-mode]].  I personally use the ~#+{begin|end}_quote~ to quote part of
+the email I am replying to.  I extensively make use of
+~#+{begin|end}_src mode~ to provide extract of code or example of
+changes, I sometimes use [[https://orgmode.org/worg/org-contrib/babel/][org-babel]] to generate an on the fly sequence
+diagram (using [[http://plantuml.com/][plantuml]]) or a simple graph (using [[https://en.wikipedia.org/wiki/DOT_(graph_description_language)][dot]]).
+
+* Keys and interactive functions
+
+The ~org-msg~ mode keys are the usual key combination used in either
+[[https://orgmode.org/][org-mode]] or [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][message-mode]].
+
+- ~C-c C-e~ -- call ~org-msg-preview()~, it generates the final HTML
+  email, save it into a temporary file and call the ~browse-url()~
+  function on that file.
+- ~C-c C-k~ -- call ~message-kill-buffer()~
+- ~C-c C-s~ -- call ~message-goto-subject()~ (same as in [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][message-mode]])
+- ~C-c C-b~ -- call ~org-msg-goto-body()~ (similar to
+  ~message-goto-body()~ in [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][message-mode]])
+- ~C-c C-a~ -- call ~org-msg-attach()~, very similar to the
+  ~org-attach()~ function.  It lets you add or delete attachment for
+  this email.  Attachment list is stored in the ~:attachment:~
+  property.
+
+The ~toggle-org-msg()~ interactive function can be called to
+enable/disable ~org-msg~.  By default, once the module is loaded, it
+is enable.  If you want to reply to an email without making use of
+~org-msg~, you should call that function before you call the reply-to
+function.
+
+* Configuration
+
+#+caption: Here is my Configuration as an Example
+#+begin_src emacs-lisp
+  (require 'org-msg)
+  (setq org-msg-options "html-postamble:nil H:5 num:nil ^:{} toc:nil")
+  (setq org-msg-startup "hidestars indent inlineimages")
+  (setq org-msg-signature "
+
+  Regards,
+
+  ,#+begin_signature
+  -- *Jeremy* \\\\
+  /One Emacs to rule them all/
+  ,#+end_signature")
+  (global-set-key (kbd "C-x m") 'org-msg-new)
+#+end_src
+
+In order to avoid CSS conflict, *org-msg* performs inline replacement
+when it generates the final HTML message.  See the
+~org-msg-enforce-css~ variable to customize the style (and the default
+~org-msg-default-style~ variable for reference).
