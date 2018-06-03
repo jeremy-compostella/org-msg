@@ -36,17 +36,21 @@ diagram (using [[http://plantuml.com/][plantuml]]) or a simple graph (using [[ht
 The ~org-msg~ mode keys are the usual key combination used in either
 [[https://orgmode.org/][org-mode]] or [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][message-mode]].
 
-- ~C-c C-e~ -- call ~org-msg-preview()~, it generates the final HTML
+- ~C-c C-e~ -- calls ~org-msg-preview()~, it generates the final HTML
   email, save it into a temporary file and call the ~browse-url()~
   function on that file.
-- ~C-c C-k~ -- call ~message-kill-buffer()~
-- ~C-c C-s~ -- call ~message-goto-subject()~ (same as in [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][message-mode]])
-- ~C-c C-b~ -- call ~org-msg-goto-body()~ (similar to
+- ~C-c C-k~ -- calls ~message-kill-buffer()~
+- ~C-c C-s~ -- calls ~message-goto-subject()~ (same as in [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][message-mode]])
+- ~C-c C-b~ -- calls ~org-msg-goto-body()~ (similar to
   ~message-goto-body()~ in [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][message-mode]])
-- ~C-c C-a~ -- call ~org-msg-attach()~, very similar to the
+- ~C-c C-a~ -- calls ~org-msg-attach()~, very similar to the
   ~org-attach()~ function.  It lets you add or delete attachment for
   this email.  Attachment list is stored in the ~:attachment:~
   property.
+- ~C-c C-c~ -- calls ~org-ctrl-c-ctrl-c()~. *org-msg* configures
+  ~org-msg-ctrl-c-ctrl-c()~ as a final hook of [[https://orgmode.org/][org-mode]]. When
+  ~org-msg-ctrl-c-ctrl-c()~ is called in a *org-msg* buffer it
+  generates the MIME message and send it.
 
 The ~toggle-org-msg()~ interactive function can be called to
 enable/disable ~org-msg~.  By default, once the module is loaded, it
