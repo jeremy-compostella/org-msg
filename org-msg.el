@@ -630,7 +630,7 @@ otherwise."
   (interactive)
   (if (message-in-body-p)
       (org-cycle)		  ; TODO: Dynamically get the right function
-    (bbdb-complete-mail)))
+    (message-tab)))
 
 (defsubst org-msg-set-attachment-prop (files)
   (org-msg-set-prop "attachment"
