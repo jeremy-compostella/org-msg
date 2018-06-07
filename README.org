@@ -60,6 +60,8 @@ function.
 
 * Configuration
 
+org-msg depends on this module: [[https://github.com/hniksic/emacs-htmlize][emacs-htmlize]]
+
 #+caption: Here is my Configuration as an Example
 #+begin_src emacs-lisp
   (require 'org-msg)
