@@ -85,7 +85,17 @@ replaced with the first name of the person you are replying to."
 	 (theme-color "#0071c5")
 	 (color `(color . ,theme-color))
 	 (table `(,@font (margin-top . "0px")))
-	 (ftl-number `(,@font ,color ,bold (text-align . "left"))))
+	 (ftl-number `(,@font ,color ,bold (text-align . "left")))
+	 (inline-modes '(asl c c++ conf cpp csv diff ditaa emacs-lisp
+			     fundamental ini json makefile man org plantuml
+			     python sh xml))
+	 (inline-src `((color . ,(face-foreground 'default))
+		       (background-color . ,(face-background 'default))))
+	 (code-src
+	  (mapcar (lambda (mode)
+		    `(code ,(intern (concat "src src-" (symbol-name mode)))
+			   ,inline-src))
+		  inline-modes)))
   `((del nil (,@font (color . "grey") (border-left . "none")
 	      (text-decoration . "line-through") (margin-bottom . "0px")
 	      (margin-top . "10px") (line-height . "11pt")))
@@ -107,12 +117,12 @@ replaced with the first name of the person you are replying to."
 		     (border-left . "3px solid #ccc") (font-style . "italic")
 		     (background . "#f9f9f9")))
     (code nil (,font-size (font-family . "monospace") (background . "#f9f9f9")))
+    ,@code-src
     (nil linenr ((padding-right . "1em")
 		 (color . "black")
 		 (background-color . "#aaaaaa")))
     (pre nil ((line-height . "12pt")
-	      (color . ,(face-foreground 'default))
-	      (background-color . ,(face-background 'default))
+	      ,@inline-src
 	      (margin . "0px")
 	      (font-size . "9pt")
 	      (font-family . "monospace")
