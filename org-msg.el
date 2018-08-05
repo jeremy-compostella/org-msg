@@ -125,9 +125,7 @@ replaced with the first name of the person you are replying to."
 	      ,@inline-src
 	      (margin . "0px")
 	      (font-size . "9pt")
-	      (font-family . "monospace")
-	      ;; (max-width . "800px")
-	      ))
+	      (font-family . "monospace")))
     (div org-src-container ((margin-top . "10px")))
     (nil figure-number ,ftl-number)
     (nil table-number)
