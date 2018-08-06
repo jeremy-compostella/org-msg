@@ -629,7 +629,7 @@ otherwise."
 (defun org-msg-tab ()
   (interactive)
   (if (message-in-body-p)
-      (org-cycle)		  ; TODO: Dynamically get the right function
+      (org-cycle)
     (message-tab)))
 
 (defsubst org-msg-set-attachment-prop (files)
