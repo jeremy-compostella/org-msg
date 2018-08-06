@@ -741,6 +741,7 @@ d       Delete one attachment, you will be prompted for a file name.")))
   (local-set-key (kbd "C-c C-b") 'org-msg-goto-body)
   (local-set-key (kbd "C-c C-a") 'org-msg-attach)
   (set (make-local-variable 'message-sent-message-via) nil)
+  (add-hook 'completion-at-point-functions 'message-completion-function nil t)
   (setq org-font-lock-keywords
 	(append org-font-lock-keywords message-font-lock-keywords
 		org-msg-font-lock-keywords))
