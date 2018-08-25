@@ -193,8 +193,9 @@ file."
   (let* ((pages '())
 	 (save-page (lambda (url &optional args) (push url pages)))
 	 (browse-url-browser-function save-page))
-    (save-window-excursion
-      (gnus-article-browse-html-article))
+    (cl-letf (((symbol-function 'gnus-summary-show-article) #'ignore))
+      (save-window-excursion
+	(gnus-article-browse-html-article)))
     (substring (car (last pages)) (length "file://"))))
 
 (defun org-msg-attrs-str (attr)
