@@ -3,7 +3,7 @@
 ;; Copyright (C) 2018 Jérémy Compostella
 
 ;; Author: Jérémy Compostella <jeremy.compostella@gmail.com>
-;; Version: 1.0
+;; Version: 1.1
 ;; Keywords:
 
 ;; This program is free software; you can redistribute it and/or modify
