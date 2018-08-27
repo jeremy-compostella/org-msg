@@ -3,8 +3,11 @@
 ;; Copyright (C) 2018 Jérémy Compostella
 
 ;; Author: Jérémy Compostella <jeremy.compostella@gmail.com>
-;; Version: 1.1
-;; Keywords:
+;; Created: January 2018
+;; Keywords: extensions mail
+;; Homepage: https://github.com/jeremy-compostella/org-msg
+;; Package-Version: 1.1
+;; Package-Requires: ((emacs "24.4") (htmlize "1.54"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -19,8 +22,8 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-;; Introduction:
-;;
+;;; Commentary:
+
 ;; In a work environment it is necessary to be able to send email and
 ;; reply to email in HTML.  This module provides a `org-msg-mode'
 ;; which make use of `org-mode' for body HTML composition,
@@ -30,8 +33,10 @@
 ;; - It uses `gnus-article-browse-html-article' to generate an HTML
 ;;   version of the article to reply to.  This HTML content is
 ;;   modified to add the reply generated using org-mode HTML export.
-;; - It overrides `mml-expand-html-into-multipart-related' to add
-;;   the support for file attachment.
+;; - It overrides `mml-expand-html-into-multipart-related' to add the
+;;   support for file attachment.
+
+;;; Code:
 
 (require 'cl)
 (require 'htmlize)
@@ -672,7 +677,7 @@ d       Delete one attachment, you will be prompted for a file name.")))
   (message-mail)
   (org-msg-post-setup))
 
-(defun toggle-org-msg ()
+(defun org-msg-toggle ()
   (interactive)
   (setq org-msg-enable (not org-msg-enable))
   (message (if org-msg-enable
@@ -737,3 +742,5 @@ d       Delete one attachment, you will be prompted for a file name.")))
 (add-to-list 'message-syntax-checks '(invisible-text . disabled))
 
 (provide 'org-msg)
+
+;;; org-msg.el ends here

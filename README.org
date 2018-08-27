@@ -52,7 +52,7 @@ The ~org-msg~ mode keys are the usual key combination used in either
   ~org-msg-ctrl-c-ctrl-c()~ is called in a *org-msg* buffer it
   generates the MIME message and send it.
 
-The ~toggle-org-msg()~ interactive function can be called to
+The ~org-msg-toggle()~ interactive function can be called to
 enable/disable ~org-msg~.  By default, once the module is loaded, it
 is enable.  If you want to reply to an email without making use of
 ~org-msg~, you should call that function before you call the reply-to
