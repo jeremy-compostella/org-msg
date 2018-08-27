@@ -276,7 +276,7 @@ representation. ((tag class ((prop1 . val1) ...)) ...)."
   "Convert FILE CSS into content into a list representation. See
 `org-msg-css-to-list'."
   (with-temp-buffer
-    (insert-file file)
+    (insert-file-contents file)
     (org-msg-css-to-list)))
 
 (defun org-msg-props-to-style (props)
@@ -408,7 +408,7 @@ file references absolute based on that path."
   "Load the html FILE and returns a XML tree. See
 `org-msg-parse-html-buffer'."
   (with-temp-buffer
-    (insert-file file)
+    (insert-file-contents file)
     (org-msg-parse-html-buffer (file-name-directory file))))
 
 (defun org-msg-org-to-xml (str &optional base)
@@ -454,37 +454,37 @@ paths. See `org-msg-parse-html-buffer'."
       (read (concat "(" str ")")))))
 
 (defun org-msg-build ()
-  (cl-flet ((enforce (xml)
-	      (let* ((tag (car xml))
-		     (tmp (assq 'class (cadr xml)))
-		     (class (when tmp
-			      (intern (cdr tmp))))
-		     (style (org-msg-build-style tag class css)))
-		(when style
-		  (setf (cadr xml) (assq-delete-all 'style (cadr xml)))
-		  (setf (cadr xml) (assq-delete-all 'class (cadr xml)))
-		  (push `(style . ,style) (cadr xml)))))
-	    (fix-img-src (xml)
-	      (let ((tag (car xml))
-		    (src (assq 'src (cadr xml))))
-		(when (string-prefix-p "file://" (cdr src))
-		  (setcdr src (substring (cdr src) (length "file://")))))))
-    (let* ((org (buffer-substring-no-properties (org-msg-start) (org-msg-end)))
-	   (reply (org-msg-org-to-xml org default-directory))
-	   (original-file (org-msg-get-prop "reply-to"))
-	   (original (unless (string= "" original-file)
-		       (org-msg-load-html-file original-file)))
-	   (css (org-msg-load-css)))
-      (assq-delete-all 'h1 (assq 'div (assq 'body reply)))
-      (org-msg-xml-walk (assq 'body reply) #'fix-img-src)
-      (when css
-	(assq-delete-all 'style (assq 'head reply))
-	(org-msg-xml-walk (assq 'body reply) #'enforce))
-      (if (not original)
-	  (assq-delete-all 'script (assq 'head reply))
-	(org-msg-improve-reply-header original css)
-	(push (assq 'div (assq 'body reply)) (cddr (assq 'body original))))
-      (or original reply))))
+  (let ((css (org-msg-load-css)))
+    (cl-flet ((enforce (xml)
+	       (let* ((tag (car xml))
+		      (tmp (assq 'class (cadr xml)))
+		      (class (when tmp
+			       (intern (cdr tmp))))
+		      (style (org-msg-build-style tag class css)))
+		 (when style
+		   (setf (cadr xml) (assq-delete-all 'style (cadr xml)))
+		   (setf (cadr xml) (assq-delete-all 'class (cadr xml)))
+		   (push `(style . ,style) (cadr xml)))))
+	      (fix-img-src (xml)
+			   (let ((tag (car xml))
+				 (src (assq 'src (cadr xml))))
+			     (when (string-prefix-p "file://" (cdr src))
+			       (setcdr src (substring (cdr src) (length "file://")))))))
+      (let* ((org (buffer-substring-no-properties (org-msg-start) (org-msg-end)))
+	     (reply (org-msg-org-to-xml org default-directory))
+	     (original-file (org-msg-get-prop "reply-to"))
+	     (original (unless (string= "" original-file)
+			 (org-msg-load-html-file original-file))))
+	(assq-delete-all 'h1 (assq 'div (assq 'body reply)))
+	(org-msg-xml-walk (assq 'body reply) #'fix-img-src)
+	(when css
+	  (assq-delete-all 'style (assq 'head reply))
+	  (org-msg-xml-walk (assq 'body reply) #'enforce))
+	(if (not original)
+	    (assq-delete-all 'script (assq 'head reply))
+	  (org-msg-improve-reply-header original css)
+	  (push (assq 'div (assq 'body reply)) (cddr (assq 'body original))))
+	(or original reply)))))
 
 (defun org-msg-preview (arg)
   (interactive "P")
