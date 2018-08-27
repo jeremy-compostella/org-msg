@@ -602,8 +602,10 @@ otherwise."
 	      (insert "\n\n" org-msg-separator "\n")
 	      (delete-region (line-beginning-position)
 			     (1+ (line-end-position)))
-	      (while (re-search-forward "^>+ *" nil t)
-		(replace-match ""))))
+	      (save-excursion
+		(while (re-search-forward "^>+ *" nil t)
+		  (replace-match "")))
+	      (org-escape-code-in-region (point) (point-max))))
 	  (when org-msg-signature
 	    (insert org-msg-signature))
 	  (org-msg-mode))))))
