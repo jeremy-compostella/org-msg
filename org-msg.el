@@ -302,26 +302,6 @@ that can be used as a HTML style attribute value."
 and mailto anchor link.  If a css style list is provided and a 'a
 selectors on class `org-msg-reply-header-class', it sets the
 style mailto anchor link style appropriately."
-  (cl-flet ((to-mailto (x)
-	      `(a ((href . ,(format "mailto:%s <%s>" (car x) (cadr x))))
-		  ,(car x))))
-    (when (with-temp-buffer
-	    (insert str)
-	    (goto-char (point-min))
-	    (re-search-forward "<[A-Za-z0-9@\.]+>" nil t))
-      (let ((style (org-msg-build-style 'a org-msg-reply-header-class css))
-	    (res (mapcar #'to-mailto (mail-extract-address-components str t)))
-	    (tmp res))
-	(while (cdr tmp)
-	  (setcdr tmp (cons ", " (cdr tmp)))
-	  (setf tmp (cddr tmp)))
-	(push ": " res)))))
-
-(defun org-msg-str-to-mailto (str css)
-  "Takes a string STR as a parameter and build a list of string
-and mailto anchor link.  If a css style list is provided and a 'a
-selectors on class `org-msg-reply-header-class', it sets the
-style mailto anchor link style appropriately."
   (with-temp-buffer
     (insert str)
     (let ((name-regexp "\\\([a-zA-Z\"][0-9a-zA-Z ,\"\(\)@\./\-]+\\\)")
