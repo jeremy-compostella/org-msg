@@ -1,6 +1,8 @@
 *org-msg* is a [[https://www.gnu.org/software/emacs/][GNU/Emacs]] module making use of [[https://orgmode.org/][org-mode]] to write and
 reply to emails in a Outlook HTML friendly style.
 
+[[https://melpa.org/#/org-msg][https://melpa.org/packages/org-msg-badge.svg]]
+
 * Presentation
 
 Not that I really like the Outlook email style but in a work
