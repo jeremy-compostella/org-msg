@@ -1,4 +1,4 @@
-;;; org-msg.el --- org mode to send and reply to email in HTML
+;;; org-msg.el --- Org mode to send and reply to email in HTML
 
 ;; Copyright (C) 2018 Jérémy Compostella
 
@@ -24,11 +24,14 @@
 
 ;;; Commentary:
 
-;; In a work environment it is necessary to be able to send email and
-;; reply to email in HTML.  This module provides a `org-msg-mode'
-;; which make use of `org-mode' for body HTML composition,
-;; `message-mode' for overall mail composition and `mml-mode' to
-;; handle inline images inclusion and attach files.
+;; OrgMsg can be considered an extension of the `message-user-agent'
+;; to use Org mode for email composition and Org mode HTML export
+;; engine to produce HTML emails.
+
+;; This module provides the OrgMsg mode which make use of Org mode
+;; for body HTML composition, `message-mode' for overall mail
+;; composition and `mml-mode' to handle inline images inclusion and
+;; attach files.
 ;;
 ;; - It uses `gnus-article-browse-html-article' to generate an HTML
 ;;   version of the article to reply to.  This HTML content is
@@ -51,16 +54,18 @@
   :group 'applications)
 
 (defvar org-msg-attachment '()
-  "Temporary variable")
+  "Temporary variable to pass the list of attachment.")
 
 (defvar org-msg-enable t
-  "")
+  "T if OrgMsg is enable, nil otherwise.
+See `org-msg-toggle'.")
 
 (defvar org-msg-export-in-progress nil
-  "Internal use only")
+  "Internal use only.
+It is used by function advice.")
 
 (defcustom org-msg-separator (purecopy "--citation follows this line (read-only)--")
-  ""
+  "String separating the reply area and the original mail."
   :type 'string
   :group 'org-msg)
 
@@ -73,8 +78,9 @@
   :group 'org-msg)
 
 (defcustom org-msg-greeting-fmt "\nHi %s,\n\n"
-  "Mail greeting format.  If it contains a %s format, %s is
-replaced with the first name of the person you are replying to."
+  "Mail greeting format.
+If it contains a %s format, %s is replaced with the first name of
+the person you are replying to."
   :group 'org-msg)
 
 (defcustom org-msg-signature "\n#+begin_signature\n\n#+end_signature"
@@ -174,10 +180,8 @@ replaced with the first name of the person you are replying to."
 
 (defcustom org-msg-enforce-css org-msg-default-style
   "Define how to handle CSS style:
-
-- listp - style definition: see `org-msg-default-style' for
+- list - style definition: see `org-msg-default-style' for
   example.
-
 - string - path to a CSS file: same as t but use this file
   definitions."
   :group 'org-msg)
@@ -186,12 +190,12 @@ replaced with the first name of the person you are replying to."
   "Default CSS class for reply header tags.")
 
 (defun org-msg-save-article-for-reply ()
-  "Export the currently visited `gnus-article-buffer' as a HTML
-file using the `gnus-article-browse-html-article' function. If
-the current article contains other HTML emails as attachments,
-the `browse-url-browser-function' is called several times.  We
-only keep track of the first call which is usually the actual
-email we want to reply to.  The
+  "Export the currently visited `gnus-article-buffer' as HTML.
+It exports in a file using the `gnus-article-browse-html-article'
+function.  If the current article contains other HTML emails as
+attachments, the `browse-url-browser-function' is called several
+times.  We only keep track of the first call which is usually the
+actual email we want to reply to.  The
 `gnus-article-browse-html-article' also extract all the inline
 images.  This function returns the absolute path of the HTML
 file."
@@ -204,7 +208,7 @@ file."
     (substring (car (last pages)) (length "file://"))))
 
 (defun org-msg-attrs-str (attr)
-  "Convert an list of attributes into a string."
+  "Convert ATTR list of attributes into a string."
   (cl-flet ((attr-str (x)
 	      (concat " " (symbol-name (car x)) "=\""
 		      (xml-escape-string (cdr x)) "\"")))
@@ -213,8 +217,9 @@ file."
       "")))
 
 (defun org-msg-xml-escape-string (string)
-  "This is a reduction of `xml-escape-string' to work-around a
-bug during email generation where '&apos;' is turned into
+  "Convert STRING into a string containing valid XML character data.
+This is a reduction of `xml-escape-string' to work-around a bug
+during email generation where '&apos;' is turned into
 '&amp;apos;'."
   (with-temp-buffer
     (insert string)
@@ -228,7 +233,7 @@ bug during email generation where '&apos;' is turned into
     (buffer-string)))
 
 (defun org-msg-xml-to-str (xml)
-  "Convert the xml tree into a HTML string."
+  "Convert the XML tree into a HTML string."
   (cond ((and (listp xml) (equal xml '(p nil " ")))
 	 "<o:p>&nbsp;</o:p>")
 	((and (listp xml) (equal xml '(p nil)))
@@ -249,8 +254,8 @@ bug during email generation where '&apos;' is turned into
 		 (org-msg-attrs-str (cadr xml))))))
 
 (defun org-msg-css-to-list ()
-  "Convert the current buffer CSS content into a list
-representation. ((tag class ((prop1 . val1) ...)) ...)."
+  "Convert the current buffer CSS content into a list.
+\((tag class ((prop1 . val1) ...)) ...)."
   (let ((l))
     (save-excursion
       (goto-char (point-min))
@@ -273,21 +278,22 @@ representation. ((tag class ((prop1 . val1) ...)) ...)."
 	l))
 
 (defun org-msg-css-file-to-list (file)
-  "Convert FILE CSS into content into a list representation. See
-`org-msg-css-to-list'."
+  "Convert FILE CSS content into a list representation.
+See `org-msg-css-to-list'."
   (with-temp-buffer
     (insert-file-contents file)
     (org-msg-css-to-list)))
 
 (defun org-msg-props-to-style (props)
+  "Convert PROPS properties to a CSS style string."
   (cl-flet ((css-str (css)
 	      (concat (symbol-name (car css)) ":"
 		      (cdr css) ";")))
     (apply 'concat (mapcar #'css-str props))))
 
 (defun org-msg-build-style (tag class css)
-  "Given a TAG and CLASS selector, it builds a CSS style string
-that can be used as a HTML style attribute value."
+  "Given a TAG and CLASS selector, it builds a CSS style string.
+This string can be used as a HTML style attribute value."
   (cl-flet ((css-match-p (css)
 	      (or (and (eq tag (car css))
 		       (eq class (cadr css)))
@@ -303,8 +309,9 @@ that can be used as a HTML style attribute value."
 ;; TODO: Make use of `mail-extract-address-components' from 'mail-extr
 ;; package
 (defun org-msg-str-to-mailto (str css)
-  "Takes a string STR as a parameter and build a list of string
-and mailto anchor link.  If a css style list is provided and a 'a
+  "Convert a string of mail addresses into mailto anchor links.
+Takes a string STR as a parameter and build a list of string and
+mailto anchor link.  If a CSS style list is provided and a 'a
 selectors on class `org-msg-reply-header-class', it sets the
 style mailto anchor link style appropriately."
   (with-temp-buffer
@@ -327,6 +334,11 @@ style mailto anchor link style appropriately."
       (nreverse res))))
 
 (defmacro org-msg-list-foreach (spec &rest body)
+  "Loop over a list.
+Evaluate BODY with VAR bound to each cons from LIST, in turn.
+Then evaluate RESULT to get return value, default nil.
+
+\(fn (VAR LIST) BODY...)"
   (declare (indent 1))
   `(let ((,(car spec) ,(cadr spec)))
      (while ,(car spec)
@@ -335,9 +347,10 @@ style mailto anchor link style appropriately."
 	 (setq ,(car spec) (cdr temp))))))
 
 (defun org-msg-improve-reply-header (xml css)
-  "The reply header (From, Subject, Date, ...) generated by
-`gnus-article-browse-html-article' does not look very nice.  This
-function does its best to improve it."
+  "Aesthetically improve the reply header.
+The reply header (From, Subject, Date, ...) generated by
+`gnus-article-browse-html-article' does not look very nice.  XML
+is the XML tree and CSS the style."
   (let ((div (assq 'div (assq 'body xml))))
     ;; Delete unnecessary line break
     (let ((e (cdr div)))
@@ -379,16 +392,16 @@ function does its best to improve it."
 	  (setf (cddr div) `((p ((style . ,p-style)) ,@(cddr div)))))))))
 
 (defun org-msg-xml-walk (xml fun)
-  "Walk a XML tree calling FUN on each node."
+  "Recursively walk a XML tree and call FUN on each node."
   (when (listp xml)
     (funcall fun xml)
     (dolist (e (cddr xml))
       (org-msg-xml-walk e fun))))
 
-(defun org-msg-parse-html-buffer (&optional base)
-  "Parse the current buffer as a HTML content and return a XML
-tree out of it.  If BASE is specified, it makes all the IMG SRC
-file references absolute based on that path."
+(defun org-msg-html-buffer-to-xml (&optional base)
+  "Return the XML tree of the current HTML buffer.
+BASE is the path used to convert the IMG SRC relative paths to
+absolute paths."
   (cl-flet ((make-img-abs (xml)
 	     (when (eq (car xml) 'img)
 	       (let ((src (assq 'src (cadr xml))))
@@ -405,16 +418,15 @@ file references absolute based on that path."
       xml)))
 
 (defun org-msg-load-html-file (file)
-  "Load the html FILE and returns a XML tree. See
-`org-msg-parse-html-buffer'."
+  "Return the XML tree of a HTML FILE."
   (with-temp-buffer
     (insert-file-contents file)
-    (org-msg-parse-html-buffer (file-name-directory file))))
+    (org-msg-html-buffer-to-xml (file-name-directory file))))
 
 (defun org-msg-org-to-xml (str &optional base)
-  "Transform the str OrgMode content into a html XML tree. Base
-is specified is the path to use to update the IMG SRC relative
-paths. See `org-msg-parse-html-buffer'."
+  "Transform the STR Org string into a XML tree.
+BASE is the path used to convert the IMG SRC relative paths to
+absolute paths."
   (save-window-excursion
     (with-temp-buffer
       (insert str)
@@ -424,16 +436,18 @@ paths. See `org-msg-parse-html-buffer'."
 	    (org-html-head-include-default-style nil)
 	    (org-msg-export-in-progress t))
 	(org-html-export-as-html))
-      (let ((xml (org-msg-parse-html-buffer base)))
+      (let ((xml (org-msg-html-buffer-to-xml base)))
 	(kill-buffer)
 	xml))))
 
 (defun org-msg-load-css ()
+  "Load the CSS definition according to `org-msg-enforce-css'."
   (cond ((listp org-msg-enforce-css) org-msg-enforce-css)
 	((stringp org-msg-enforce-css)
 	 (org-msg-css-file-to-list org-msg-enforce-css))))
 
-(defmacro org-msg-search-prop (prop &rest body)
+(defmacro org-msg-with-match-prop (prop &rest body)
+  "Look for the Org PROP property and call @BODY on match."
   (declare (indent 1))
   `(save-excursion
      (goto-char (point-min))
@@ -441,19 +455,30 @@ paths. See `org-msg-parse-html-buffer'."
        (progn ,@body))))
 
 (defun org-msg-get-prop (prop)
-  (org-msg-search-prop prop
+  "Return the Org PROP property value, nil if undefined."
+  (org-msg-with-match-prop prop
     (match-string-no-properties 3)))
 
 (defun org-msg-set-prop (prop val)
-  (org-msg-search-prop prop
+  "Set the Org PROP property value to VAL."
+  (org-msg-with-match-prop prop
     (replace-match val nil nil nil 3)))
 
 (defun org-msg-get-attachment ()
+  "Return the list of attachment as a list of path to file."
   (let ((str (org-msg-get-prop "attachment")))
     (when str
       (read (concat "(" str ")")))))
 
+(defsubst org-msg-set-attachment (files)
+  "Set the list of attachment.
+FILES is a list of path to file."
+  (org-msg-set-prop "attachment"
+		    (mapconcat (lambda (file) (format "%S" file))
+			       files " ")))
+
 (defun org-msg-build ()
+  "Build and return the XML tree for current OrgMsg buffer."
   (let ((css (org-msg-load-css)))
     (cl-flet ((enforce (xml)
 	       (let* ((tag (car xml))
@@ -487,6 +512,9 @@ paths. See `org-msg-parse-html-buffer'."
 	(or original reply)))))
 
 (defun org-msg-preview (arg)
+  "Create a temporary mail and open it with `browse-url'.
+With the prefix argument ARG set, it calls
+`xwidget-webkit-browse-url' instead of `browse-url'."
   (interactive "P")
   (save-window-excursion
     (let ((browse-url-browser-function (if arg
@@ -500,6 +528,8 @@ paths. See `org-msg-parse-html-buffer'."
       (browse-url (concat "file://" tmp-file)))))
 
 (defun org-msg-prepare-to-send ()
+  "Convert the current OrgMsg buffer into `mml' content.
+This function is a hook for `message-send-hook'."
   (when org-msg-enable
     (save-window-excursion
       (when (eq major-mode 'org-msg-mode)
@@ -515,6 +545,13 @@ paths. See `org-msg-parse-html-buffer'."
 	  (insert (org-msg-xml-to-str mail)))))))
 
 (defun org-msg-mml-into-multipart-related (orig-fun cont)
+  "Extend the capability to handle file attachments.
+This function is used as an advice function of
+`mml-expand-html-into-multipart-related'.
+- ORIG-FUN is the original function.
+- CONT is the MIME representation of the mail content.
+The implementation depends on the `org-msg-attachment' temporary
+variable set by `org-msg-prepare-to-send'."
   (setq cont (funcall orig-fun cont))
   (let ((newparts '()))
     (dolist (file org-msg-attachment)
@@ -530,6 +567,11 @@ paths. See `org-msg-parse-html-buffer'."
 	    :around #'org-msg-mml-into-multipart-related)
 
 (defun org-msg-html--todo (orig-fun todo &optional info)
+  "Format todo keywords into HTML.
+This function is used as an advice function of `org-html--todo'.
+- ORIG-FUN is the original function.
+- TODO is a TODO keyword.
+- INFO is a property list."
    (cl-macrolet ((add-if-exist (val lst sym)
   	         `(when ,val
 		    (push (cons ,sym (apply 'color-rgb-to-hex
@@ -554,7 +596,8 @@ paths. See `org-msg-parse-html-buffer'."
 (advice-add 'org-html--todo :around #'org-msg-html--todo)
 
 (defun org-msg-get-to-first-name ()
-  "Parse the 'To:' field of the current `org-msg-mode' buffer to
+  "Return the first name of the recipient.
+It parses the 'To:' field of the current `org-msg-mode' buffer to
 extract and return the first name.  It is used to automatically
 greet the right name, see `org-msg-greeting-fmt'."
   (save-excursion
@@ -571,15 +614,17 @@ greet the right name, see `org-msg-greeting-fmt'."
 		  (cadr split)))))))
 
 (defun org-msg-header (reply-to)
+  "Build the Org OPTIONS and PROPERTIES blocks.
+REPLY-TO is the file path of the original email export in HTML."
   (concat (format "#+OPTIONS: %s d:nil\n#+STARTUP: %s\n"
 		  (or org-msg-options "") (or org-msg-startup ""))
 	  (format ":PROPERTIES:\n:reply-to: %s\n:attachment: \n:END:\n"
 		  (or reply-to ""))))
 
 (defun org-msg-article-htmlp ()
-  "Returns t if the currently visited
-article (`gnus-article-buffer') contains a html mime part, nil
-otherwise."
+  "Return t if the current article is HTML article.
+If the currently visited article (`gnus-article-buffer') contains
+a html mime part, it returns t, nil otherwise."
   (let* ((parts (with-current-buffer gnus-article-buffer
 		  (set-buffer gnus-original-article-buffer)
 		  (mm-dissect-buffer t t)))
@@ -587,6 +632,10 @@ otherwise."
     (string-match-p "text/html" str)))
 
 (defun org-msg-post-setup ()
+  "Transform the current `message' buffer into a OrgMsg buffer.
+If the current `message' buffer is a reply, the
+`org-msg-separator' string is inserted at the end of the editing
+area."
   (when org-msg-enable
     (message-goto-body)
     (let ((new (= (point) (point-max)))
@@ -611,32 +660,38 @@ otherwise."
 	  (org-msg-mode))))))
 
 (defun org-msg-ctrl-c-ctrl-c ()
+  "Send message like `message-send-and-exit'.
+If the current buffer is OrgMsg buffer and OrgMsg is enabled (see
+`org-msg-toggle'), it calls `message-send-and-exit'."
   (when (and (eq major-mode 'org-msg-mode) org-msg-enable)
     (message-send-and-exit)))
 
 (defun org-msg-tab ()
+  "Complete names or Org mode visibility cycle.
+If `point' is in the mail header region, the `message-tab'
+function is called.  `org-cycle' is called otherwise."
   (interactive)
   (if (message-in-body-p)
       (org-cycle)
     (message-tab)))
 
-(defsubst org-msg-set-attachment-prop (files)
-  (org-msg-set-prop "attachment"
-		    (mapconcat (lambda (file) (format "%S" file))
-			       files " ")))
-
 (defun org-msg-attach-attach (file)
+  "Link FILE into the list of attachment."
   (interactive (list (ido-read-file-name "File to attach: ")))
   (let ((files (org-msg-get-attachment)))
-    (org-msg-set-attachment-prop (push file files))))
+    (org-msg-set-attachment (push file files))))
 
 (defun org-msg-attach-delete ()
+  "Delete a single attachment."
   (interactive)
   (let* ((files (org-msg-get-attachment))
 	 (d (ido-completing-read "File to remove: " files)))
-    (org-msg-set-attachment-prop (delete d files))))
+    (org-msg-set-attachment (delete d files))))
 
 (defun org-msg-attach ()
+  "The dispatcher for attachment commands.
+Shows a list of commands and prompts for another key to execute a
+command."
   (interactive)
   (let (c)
     (save-excursion
@@ -654,11 +709,13 @@ d       Delete one attachment, you will be prompted for a file name.")))
 	  ((memq c '(?d ?\C-d)) (call-interactively 'org-msg-attach-delete)))))
 
 (defun org-msg-start ()
+  "Return the point of the beginning of the message body."
   (save-excursion
     (message-goto-body)
     (point)))
 
 (defun org-msg-end ()
+  "Return the point of the end of the message body."
   (save-excursion
     (goto-char (point-min))
     (or (when (re-search-forward
@@ -667,6 +724,7 @@ d       Delete one attachment, you will be prompted for a file name.")))
 	(point-max))))
 
 (defun org-msg-goto-body ()
+  "Move point to the beginning of the message body."
   (interactive)
   (goto-char (point-min))
   (if org-msg-signature
@@ -674,12 +732,15 @@ d       Delete one attachment, you will be prompted for a file name.")))
 	(goto-char (match-beginning 0)))
     (message-goto-body)))
 
-(defun org-msg-new ()
+(defun org-msg-new (&optional to subject)
+  "Start editing a mail message to be sent.
+TO is the recipient and SUBJECT the subject of the new mail."
   (interactive)
-  (message-mail)
+  (message-mail to subject)
   (org-msg-post-setup))
 
 (defun org-msg-toggle ()
+  "Enable/Disable OrgMsg."
   (interactive)
   (setq org-msg-enable (not org-msg-enable))
   (message (if org-msg-enable
@@ -687,6 +748,7 @@ d       Delete one attachment, you will be prompted for a file name.")))
 	     (propertize "OrgMsg disabled." 'face 'error))))
 
 (defun org-msg-font-lock-make-header-matcher (regexp)
+  "Create a function which look for REGEXP."
   `(lambda (limit)
      (save-restriction
        (widen)
@@ -722,6 +784,18 @@ d       Delete one attachment, you will be prompted for a file name.")))
   "Additional expressions to highlight in OrgMsg mode.")
 
 (define-derived-mode org-msg-mode org-mode "OrgMsg"
+  "Major mode for editing mail to be sent.
+Like Org Mode but with these additional/changed commands:
+C-c C-c send the message if the cursor is not a C-c C-c org mode
+        controlled region
+C-C C-e `org-msg-preview' (Generate a temporary email and open it
+        with `browse-url'
+C-c C-k `message-kill-buffer' (kill the current buffer)
+C-c C-s `message-goto-subject' (move point to the Subject header)
+C-c C-b `org-msg-goto-body' (move point to the beginning of the
+        message body)
+C-c C-a `org-msg-attach' (call the dispatcher for attachment
+       commands)"
   (local-set-key (kbd "<tab>") 'org-msg-tab)
   (local-set-key (kbd "C-c C-e") 'org-msg-preview)
   (local-set-key (kbd "C-c C-k") 'message-kill-buffer)
