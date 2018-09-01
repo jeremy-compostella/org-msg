@@ -77,14 +77,26 @@ It is used by function advice.")
   "Org Mode #+STARTUP."
   :group 'org-msg)
 
-(defcustom org-msg-greeting-fmt "\nHi %s,\n\n"
+(defcustom org-msg-greeting-fmt nil
   "Mail greeting format.
-If it contains a %s format, %s is replaced with the first name of
-the person you are replying to."
+If it contains a '%s' format, '%s' is replaced with the first
+name of the person you are replying to.
+
+Example: \"\nHi %s,\n\n\""
   :group 'org-msg)
 
-(defcustom org-msg-signature "\n#+begin_signature\n\n#+end_signature"
-  "Mail signature."
+(defcustom org-msg-greeting-fmt-mailto nil
+  "If t and `org-msg-greeting-fmt' contains a '%s' the first name
+is formatted as a mailto link."
+  :group 'org-msg)
+
+(defcustom org-msg-signature nil
+  "Mail signature string appended if not nil.
+The part in the signature block gets applied the \"signature\"
+CSS style.
+
+Example:
+\"\n\nRegards,\n\n#+begin_signature\n-- *Your name*\n#+end_signature\""
   :group 'org-msg)
 
 (defconst org-msg-default-style
@@ -608,10 +620,12 @@ greet the right name, see `org-msg-greeting-fmt'."
 	   (split (split-string to "[<,]" t "[ \">]+")))
       (if (or (not split) (= (length split) 1))
 	  ""
-	(format "[[mailto:%s][%s]]" to
-		(if (= (length split) 2)
-		    (car (split-string (car split) " "))
-		  (cadr split)))))))
+	(let ((first-name (if (= (length split) 2)
+			      (car (split-string (car split) " "))
+			    (cadr split))))
+	  (if org-msg-greeting-fmt-mailto
+	      (format "[[mailto:%s][%s]]" to first-name)
+	    first-name))))))
 
 (defun org-msg-header (reply-to)
   "Build the Org OPTIONS and PROPERTIES blocks.
@@ -644,7 +658,9 @@ area."
 	(unless new
 	  (setq reply-to (org-msg-save-article-for-reply)))
 	(insert (org-msg-header reply-to))
-	(insert (format org-msg-greeting-fmt (org-msg-get-to-first-name)))
+	(when org-msg-greeting-fmt
+	  (insert (format org-msg-greeting-fmt
+			  (org-msg-get-to-first-name))))
 	(save-excursion
 	  (unless new
 	    (save-excursion
