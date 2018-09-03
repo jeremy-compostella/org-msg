@@ -1,4 +1,4 @@
-*org-msg* is a [[https://www.gnu.org/software/emacs/][GNU/Emacs]] module making use of [[https://orgmode.org/][org-mode]] to write and
+*OrgMsg* is a [[https://www.gnu.org/software/emacs/][GNU/Emacs]] module making use of [[https://orgmode.org/][Org mode]] to write and
 reply to emails in a Outlook HTML friendly style.
 
 [[https://melpa.org/#/org-msg][https://melpa.org/packages/org-msg-badge.svg]]
@@ -8,61 +8,62 @@ reply to emails in a Outlook HTML friendly style.
 Not that I really like the Outlook email style but in a work
 environment dominated by this software, it is good to be able to reply
 with the same style.  By default, if the original message is in text
-form ~org-msg~ keeps it that way and does not activate itself.  It
+form *OrgMsg* keeps it that way and does not activate itself.  It
 allows to reply to developer mailing list (or any real technical
 people who knows how to handle text email) seamlessly.  If the
-original message is in the HTML form, it activates the ~org-msg~ mode
+original message is in the HTML form, it activates the *OrgMsg* mode
 on the reply buffer.
 
-*org-msg* is an derivation of [[https://orgmode.org/][org-mode]] in which some functionality of
-[[https://www.gnu.org/software/emacs/manual/html_mono/message.html][message-mode]] are imported or replicated. For instance, A *org-msg*
+*OrgMsg* is an derivation of [[https://orgmode.org/][org-mode]] in which some functionality of
+[[https://www.gnu.org/software/emacs/manual/html_mono/message.html][message-mode]] are imported or replicated. For instance, A *OrgMsg*
 buffer uses the same ~font-lock-keywords~ than [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][message-mode]] or the
 ~TAB~ key while the cursor is in the header calls the
-~bbdb-complete-mail()~ function.
+~message-tab()~ function.
 
 For convenience, the original message is quoted below the ~--citation
 follows this line (read-only)--~ marker.  So you can easily refer to
 the original message.  However, the entire quoted text is read-only
-because *org-msg* does not support modification of the original
+because *OrgMsg* does not support modification of the original
 content.
 
-Outlook email are really poor compared to what can be achieved by
-[[https://orgmode.org/][org-mode]].  I personally use the ~#+{begin|end}_quote~ to quote part of
-the email I am replying to.  I extensively make use of
-~#+{begin|end}_src mode~ to provide extract of code or example of
-changes, I sometimes use [[https://orgmode.org/worg/org-contrib/babel/][org-babel]] to generate an on the fly sequence
-diagram (using [[http://plantuml.com/][plantuml]]) or a simple graph (using [[https://en.wikipedia.org/wiki/DOT_(graph_description_language)][dot]]).
+Outlook email are really poor compared to what can be achieved by [[https://orgmode.org/][Org
+mode]].  I personally use the ~#+{begin|end}_quote~ to quote part of the
+email I am replying to.  I extensively make use of ~#+{begin|end}_src
+mode~ to provide extract of code or example of changes, I sometimes
+use [[https://orgmode.org/worg/org-contrib/babel/][org-babel]] to generate an on the fly sequence diagram (using
+[[http://plantuml.com/][plantuml]]) or a simple graph (using [[https://en.wikipedia.org/wiki/DOT_(graph_description_language)][dot]]).
 
 * Keys and interactive functions
 
-The ~org-msg~ mode keys are the usual key combination used in either
+The *OrgMsg* mode keys are the usual key combination used in either
 [[https://orgmode.org/][org-mode]] or [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][message-mode]].
 
 - ~C-c C-e~ -- calls ~org-msg-preview()~, it generates the final HTML
   email, save it into a temporary file and call the ~browse-url()~
   function on that file.
 - ~C-c C-k~ -- calls ~message-kill-buffer()~
-- ~C-c C-s~ -- calls ~message-goto-subject()~ (same as in [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][message-mode]])
+- ~C-c C-s~ -- calls ~message-goto-subject()~ (same as in
+  [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][message-mode]])
 - ~C-c C-b~ -- calls ~org-msg-goto-body()~ (similar to
   ~message-goto-body()~ in [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][message-mode]])
 - ~C-c C-a~ -- calls ~org-msg-attach()~, very similar to the
   ~org-attach()~ function.  It lets you add or delete attachment for
   this email.  Attachment list is stored in the ~:attachment:~
   property.
-- ~C-c C-c~ -- calls ~org-ctrl-c-ctrl-c()~. *org-msg* configures
+- ~C-c C-c~ -- calls ~org-ctrl-c-ctrl-c()~. *OrgMsg* configures
   ~org-msg-ctrl-c-ctrl-c()~ as a final hook of [[https://orgmode.org/][org-mode]]. When
-  ~org-msg-ctrl-c-ctrl-c()~ is called in a *org-msg* buffer it
+  ~org-msg-ctrl-c-ctrl-c()~ is called in a *OrgMsg* buffer it
   generates the MIME message and send it.
 
 The ~org-msg-toggle()~ interactive function can be called to
-enable/disable ~org-msg~.  By default, once the module is loaded, it
-is enable.  If you want to reply to an email without making use of
-~org-msg~, you should call that function before you call the reply-to
+enable/disable *OrgMsg*.  By default, once the module is loaded, it is
+enable.  If you want to reply to an email without making use of
+*OrgMsg*, you should call that function before you call the reply-to
 function.
 
 * Configuration
 
-org-msg depends on this module: [[https://github.com/hniksic/emacs-htmlize][emacs-htmlize]]
+*OrgMsg* depends on this module: [[https://github.com/hniksic/emacs-htmlize][emacs-htmlize]]
 
 #+caption: Here is my Configuration as an Example
 #+begin_src emacs-lisp
@@ -88,7 +89,7 @@ automatically replaced with the first name of the person you are
 replying to.  If ~org-msg-greeting-fmt-mailto~ is t, the first name it
 is formatted as mailto link.
 
-In order to avoid CSS conflict, *org-msg* performs inline replacement
+In order to avoid CSS conflict, *OrgMsg* performs inline replacement
 when it generates the final HTML message.  See the
 ~org-msg-enforce-css~ variable to customize the style (and the default
 ~org-msg-default-style~ variable for reference).
