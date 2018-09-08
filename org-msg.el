@@ -42,6 +42,8 @@
 ;;; Code:
 
 (require 'cl)
+(require 'gnus-art)
+(require 'gnus-msg)
 (require 'htmlize)
 (require 'message)
 (require 'mml)
