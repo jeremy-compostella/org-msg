@@ -1,5 +1,6 @@
-*OrgMsg* is a [[https://www.gnu.org/software/emacs/][GNU/Emacs]] module making use of [[https://orgmode.org/][Org mode]] to write and
-reply to emails in a Outlook HTML friendly style.
+*OrgMsg* is a [[https://www.gnu.org/software/emacs/][GNU/Emacs]] global minor mode mixing up [[https://orgmode.org/][Org mode]] and
+[[https://www.gnu.org/software/emacs/manual/html_mono/message.html][Message mode]] to compose and reply to emails in a Outlook HTML friendly
+style.
 
 [[https://melpa.org/#/org-msg][https://melpa.org/packages/org-msg-badge.svg]]
 
@@ -14,11 +15,11 @@ people who knows how to handle text email) seamlessly.  If the
 original message is in the HTML form, it activates the *OrgMsg* mode
 on the reply buffer.
 
-*OrgMsg* is an derivation of [[https://orgmode.org/][org-mode]] in which some functionality of
-[[https://www.gnu.org/software/emacs/manual/html_mono/message.html][message-mode]] are imported or replicated. For instance, A *OrgMsg*
-buffer uses the same ~font-lock-keywords~ than [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][message-mode]] or the
-~TAB~ key while the cursor is in the header calls the
-~message-tab()~ function.
+*OrgMsg* provides a ~org-msg-edit-mode~ which is an derivation of [[https://orgmode.org/][Org
+mode]] in which some functionality of [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][Message mode]] are imported or
+replicated. For instance, A *OrgMsg* buffer uses the same
+~font-lock-keywords~ than [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][Message mode]] or the ~TAB~ key while the
+cursor is in the header calls the ~message-tab()~ function.
 
 For convenience, the original message is quoted below the ~--citation
 follows this line (read-only)--~ marker.  So you can easily refer to
@@ -55,9 +56,9 @@ The *OrgMsg* mode keys are the usual key combination used in either
   ~org-msg-ctrl-c-ctrl-c()~ is called in a *OrgMsg* buffer it
   generates the MIME message and send it.
 
-The ~org-msg-toggle()~ interactive function can be called to
+The ~org-msg-mode()~ interactive function can be called to
 enable/disable *OrgMsg*.  By default, once the module is loaded, it is
-enable.  If you want to reply to an email without making use of
+disable.  If you want to reply to an email without making use of
 *OrgMsg*, you should call that function before you call the reply-to
 function.
 
@@ -80,7 +81,7 @@ function.
   -- *Jeremy* \\\\
   /One Emacs to rule them all/
   ,#+end_signature")
-  (global-set-key (kbd "C-x m") 'org-msg-new)
+  (org-msg-mode)
 #+end_src
 
 The ~org-msg-greeting-fmt~ can be customized to configure the default

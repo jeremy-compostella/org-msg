@@ -56,10 +56,6 @@
 (defvar org-msg-attachment '()
   "Temporary variable to pass the list of attachment.")
 
-(defvar org-msg-enable t
-  "T if OrgMsg is enable, nil otherwise.
-See `org-msg-toggle'.")
-
 (defvar org-msg-export-in-progress nil
   "Internal use only.
 It is used by function advice.")
@@ -542,19 +538,18 @@ With the prefix argument ARG set, it calls
 (defun org-msg-prepare-to-send ()
   "Convert the current OrgMsg buffer into `mml' content.
 This function is a hook for `message-send-hook'."
-  (when org-msg-enable
-    (save-window-excursion
-      (when (eq major-mode 'org-msg-mode)
-	(let ((mail (org-msg-build))
-	      (attachments (org-msg-get-attachment)))
-	  (dolist (file attachments)
-	    (unless (file-exists-p file)
-	      (error "File '%s' does not exist" file)))
-	  (setq org-msg-attachment attachments)
-	  (message-goto-body)
-	  (delete-region (point) (point-max))
-	  (mml-insert-part "text/html")
-	  (insert (org-msg-xml-to-str mail)))))))
+  (save-window-excursion
+    (when (eq major-mode 'org-msg-edit-mode)
+      (let ((mail (org-msg-build))
+	    (attachments (org-msg-get-attachment)))
+	(dolist (file attachments)
+	  (unless (file-exists-p file)
+	    (error "File '%s' does not exist" file)))
+	(setq org-msg-attachment attachments)
+	(message-goto-body)
+	(delete-region (point) (point-max))
+	(mml-insert-part "text/html")
+	(insert (org-msg-xml-to-str mail))))))
 
 (defun org-msg-mml-into-multipart-related (orig-fun cont)
   "Extend the capability to handle file attachments.
@@ -574,9 +569,6 @@ variable set by `org-msg-prepare-to-send'."
       (nconc (list 'multipart (cons 'type "mixed"))
       	     (if (eq (car cont) 'multipart) (list cont) cont)
       	     newparts)))
-
-(advice-add 'mml-expand-html-into-multipart-related
-	    :around #'org-msg-mml-into-multipart-related)
 
 (defun org-msg-html--todo (orig-fun todo &optional info)
   "Format todo keywords into HTML.
@@ -605,13 +597,11 @@ This function is used as an advice function of `org-html--todo'.
 	  (funcall orig-fun todo info)
 	(funcall orig-fun todo)))))
 
-(advice-add 'org-html--todo :around #'org-msg-html--todo)
-
 (defun org-msg-get-to-first-name ()
   "Return the first name of the recipient.
-It parses the 'To:' field of the current `org-msg-mode' buffer to
-extract and return the first name.  It is used to automatically
-greet the right name, see `org-msg-greeting-fmt'."
+It parses the 'To:' field of the current `org-msg-edit-mode'
+buffer to extract and return the first name.  It is used to
+automatically greet the right name, see `org-msg-greeting-fmt'."
   (save-excursion
     (message-goto-to)
     (let* ((to (buffer-substring-no-properties
@@ -645,42 +635,44 @@ a html mime part, it returns t, nil otherwise."
 	 (str (format "%s" parts)))
     (string-match-p "text/html" str)))
 
-(defun org-msg-post-setup ()
+(defun org-msg-post-setup (&rest _args)
   "Transform the current `message' buffer into a OrgMsg buffer.
 If the current `message' buffer is a reply, the
 `org-msg-separator' string is inserted at the end of the editing
 area."
-  (when org-msg-enable
-    (message-goto-body)
-    (let ((new (= (point) (point-max)))
-	  (reply-to))
-      (when (or new (org-msg-article-htmlp))
+  (message-goto-body)
+  (let ((new (= (point) (point-max)))
+	(reply-to))
+    (when (or new (org-msg-article-htmlp))
+      (unless new
+	(setq reply-to (org-msg-save-article-for-reply)))
+      (insert (org-msg-header reply-to))
+      (when org-msg-greeting-fmt
+	(insert (format org-msg-greeting-fmt
+			(org-msg-get-to-first-name))))
+      (save-excursion
 	(unless new
-	  (setq reply-to (org-msg-save-article-for-reply)))
-	(insert (org-msg-header reply-to))
-	(when org-msg-greeting-fmt
-	  (insert (format org-msg-greeting-fmt
-			  (org-msg-get-to-first-name))))
-	(save-excursion
-	  (unless new
+	  (save-excursion
+	    (insert "\n\n" org-msg-separator "\n")
+	    (delete-region (line-beginning-position)
+			   (1+ (line-end-position)))
 	    (save-excursion
-	      (insert "\n\n" org-msg-separator "\n")
-	      (delete-region (line-beginning-position)
-			     (1+ (line-end-position)))
-	      (save-excursion
-		(while (re-search-forward "^>+ *" nil t)
-		  (replace-match "")))
-	      (org-escape-code-in-region (point) (point-max))))
-	  (when org-msg-signature
-	    (insert org-msg-signature))
-	  (org-msg-mode))))))
+	      (while (re-search-forward "^>+ *" nil t)
+		(replace-match "")))
+	    (org-escape-code-in-region (point) (point-max))))
+	(when org-msg-signature
+	  (insert org-msg-signature))
+	(org-msg-edit-mode)))
+    (if new
+	(message-goto-to)
+      (org-msg-goto-body))))
 
 (defun org-msg-ctrl-c-ctrl-c ()
   "Send message like `message-send-and-exit'.
 If the current buffer is OrgMsg buffer and OrgMsg is enabled (see
 `org-msg-toggle'), it calls `message-send-and-exit'."
-  (when (and (eq major-mode 'org-msg-mode) org-msg-enable)
-    (message-send-and-exit)))
+  (when (eq major-mode 'org-msg-edit-mode))
+    (message-send-and-exit))
 
 (defun org-msg-tab ()
   "Complete names or Org mode visibility cycle.
@@ -748,21 +740,6 @@ d       Delete one attachment, you will be prompted for a file name.")))
 	(goto-char (match-beginning 0)))
     (message-goto-body)))
 
-(defun org-msg-new (&optional to subject)
-  "Start editing a mail message to be sent.
-TO is the recipient and SUBJECT the subject of the new mail."
-  (interactive)
-  (message-mail to subject)
-  (org-msg-post-setup))
-
-(defun org-msg-toggle ()
-  "Enable/Disable OrgMsg."
-  (interactive)
-  (setq org-msg-enable (not org-msg-enable))
-  (message (if org-msg-enable
-	       (propertize "OrgMsg enabled." 'face 'success)
-	     (propertize "OrgMsg disabled." 'face 'error))))
-
 (defun org-msg-font-lock-make-header-matcher (regexp)
   "Create a function which look for REGEXP."
   `(lambda (limit)
@@ -799,7 +776,37 @@ TO is the recipient and SUBJECT the subject of the new mail."
 	  nil)))
   "Additional expressions to highlight in OrgMsg mode.")
 
-(define-derived-mode org-msg-mode org-mode "OrgMsg"
+(define-minor-mode org-msg-mode
+  "Toggle OrgMsg mode.
+With a prefix argument ARG, enable Delete Selection mode if ARG
+is positive, and disable it otherwise.  If called from Lisp,
+enable the mode if ARG is omitted or nil.
+
+When OrgMsg mode is enabled, the Message mode behavior is
+modified to make use of Org Mode for mail composition and build
+HTML emails."
+  :global t :group 'editing-basics
+  (if org-msg-mode
+      (progn
+	(add-hook 'gnus-message-setup-hook 'org-msg-post-setup)
+	(add-hook 'message-send-hook 'org-msg-prepare-to-send)
+	(add-hook 'org-ctrl-c-ctrl-c-final-hook 'org-msg-ctrl-c-ctrl-c)
+	(add-to-list 'message-syntax-checks '(invisible-text . disabled))
+	(advice-add 'mml-expand-html-into-multipart-related
+		    :around #'org-msg-mml-into-multipart-related)
+	(advice-add 'org-html--todo :around #'org-msg-html--todo)
+	(advice-add 'message-mail :after #'org-msg-post-setup))
+    (remove-hook 'gnus-message-setup-hook 'org-msg-post-setup)
+    (remove-hook 'message-send-hook 'org-msg-prepare-to-send)
+    (remove-hook 'org-ctrl-c-ctrl-c-final-hook 'org-msg-ctrl-c-ctrl-c)
+    (setq message-syntax-checks (delete '(invisible-text . disabled)
+					message-syntax-checks))
+    (advice-remove 'mml-expand-html-into-multipart-related
+		   #'org-msg-mml-into-multipart-related)
+    (advice-remove 'org-html--todo #'org-msg-html--todo)
+    (advice-remove 'message-mail #'org-msg-post-setup)))
+
+(define-derived-mode org-msg-edit-mode org-mode "OrgMsg"
   "Major mode for editing mail to be sent.
 Like Org Mode but with these additional/changed commands:
 C-c C-c send the message if the cursor is not a C-c C-c org mode
@@ -826,12 +833,6 @@ C-c C-a `org-msg-attach' (call the dispatcher for attachment
   (toggle-truncate-lines)
   (unless (= (org-msg-end) (point-max))
     (add-text-properties (1- (org-msg-end)) (point-max) '(read-only t))))
-
-(add-hook 'gnus-message-setup-hook 'org-msg-post-setup)
-(add-hook 'message-send-hook 'org-msg-prepare-to-send)
-(add-hook 'org-ctrl-c-ctrl-c-final-hook 'org-msg-ctrl-c-ctrl-c)
-
-(add-to-list 'message-syntax-checks '(invisible-text . disabled))
 
 (provide 'org-msg)
 
