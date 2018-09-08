@@ -1,4 +1,4 @@
-;;; org-msg.el --- Org mode to send and reply to email in HTML
+;;; org-msg.el --- Org mode to send and reply to email in HTML. -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2018 Jérémy Compostella
 
