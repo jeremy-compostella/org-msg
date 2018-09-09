@@ -84,8 +84,9 @@ Example: \"\nHi %s,\n\n\""
   :group 'org-msg)
 
 (defcustom org-msg-greeting-fmt-mailto nil
-  "If t and `org-msg-greeting-fmt' contains a '%s' the first name
-is formatted as a mailto link."
+  "Define the format behavior for recipient greeting.
+If t and `org-msg-greeting-fmt' contains a '%s' the first name is
+formatted as a mailto link."
   :group 'org-msg)
 
 (defcustom org-msg-signature nil
