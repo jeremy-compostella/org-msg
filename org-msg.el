@@ -210,7 +210,7 @@ actual email we want to reply to.  The
 images.  This function returns the absolute path of the HTML
 file."
   (let* ((pages '())
-	 (save-page (lambda (url &optional args) (push url pages)))
+	 (save-page (lambda (url &optional _args) (push url pages)))
 	 (browse-url-browser-function save-page))
     (cl-letf (((symbol-function 'gnus-summary-show-article) #'ignore))
       (save-window-excursion
@@ -501,8 +501,7 @@ FILES is a list of path to file."
 		   (setf (cadr xml) (assq-delete-all 'class (cadr xml)))
 		   (push `(style . ,style) (cadr xml)))))
 	      (fix-img-src (xml)
-			   (let ((tag (car xml))
-				 (src (assq 'src (cadr xml))))
+			   (let ((src (assq 'src (cadr xml))))
 			     (when (string-prefix-p "file://" (cdr src))
 			       (setcdr src (substring (cdr src) (length "file://")))))))
       (let* ((org (buffer-substring-no-properties (org-msg-start) (org-msg-end)))
