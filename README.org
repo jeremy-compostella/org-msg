@@ -62,6 +62,12 @@ disable.  If you want to reply to an email without making use of
 *OrgMsg*, you should call that function before you call the reply-to
 function.
 
+To start composing a new *OrgMsg* email, you can call the interactive
+~message-mail~ function.  If your ~mail-user-agent~ is
+~message-user-agent~ (which is the by default Emacs configuration),
+~compose-mail~ calls ~message-mail~ and is bound to ~[C-x m]~ by
+default.
+
 * Configuration
 
 *OrgMsg* depends on this module: [[https://github.com/hniksic/emacs-htmlize][emacs-htmlize]]
