@@ -797,7 +797,7 @@ enable the mode if ARG is omitted or nil.
 When OrgMsg mode is enabled, the Message mode behavior is
 modified to make use of Org Mode for mail composition and build
 HTML emails."
-  :global t :group 'editing-basics
+  :global t
   (if org-msg-mode
       (progn
 	(add-hook 'gnus-message-setup-hook 'org-msg-post-setup)
