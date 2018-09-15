@@ -62,7 +62,7 @@
   "Internal use only.
 It is used by function advice.")
 
-(defcustom org-msg-separator (purecopy "--citation follows this line (read-only)--")
+(defcustom org-msg-separator "--citation follows this line (read-only)--"
   "String separating the reply area and the original mail."
   :type 'string
   :group 'org-msg)
