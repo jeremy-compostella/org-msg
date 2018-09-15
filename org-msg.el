@@ -553,6 +553,14 @@ This function is a hook for `message-send-hook'."
 	(mml-insert-part "text/html")
 	(insert (org-msg-xml-to-str mail))))))
 
+(defun org-msg-file-mime-type (file)
+  "Return FILE mime type based on FILE extension.
+If FILE does not have an extension, \"text/plain\" is returned."
+  (let ((extension (file-name-extension file)))
+    (if extension
+	(mailcap-extension-to-mime extension)
+      "text/plain")))
+
 (defun org-msg-mml-into-multipart-related (orig-fun cont)
   "Extend the capability to handle file attachments.
 This function is used as an advice function of
@@ -564,7 +572,7 @@ variable set by `org-msg-prepare-to-send'."
   (setq cont (funcall orig-fun cont))
   (let ((newparts '()))
     (dolist (file org-msg-attachment)
-      (let ((type (mailcap-extension-to-mime (file-name-extension file))))
+      (let ((type (org-msg-file-mime-type file)))
 	(push (list 'part `(type . ,type) `(filename . ,file)
 		    '(disposition . "attachment"))
 	      newparts)))
