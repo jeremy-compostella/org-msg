@@ -64,16 +64,15 @@ It is used by function advice.")
 
 (defcustom org-msg-separator "--citation follows this line (read-only)--"
   "String separating the reply area and the original mail."
-  :type 'string
-  :group 'org-msg)
+  :type '(string))
 
 (defcustom org-msg-options "html-postamble:nil toc:nil"
   "Org Mode #+OPTIONS."
-  :group 'org-msg)
+  :type '(string))
 
 (defcustom org-msg-startup nil
   "Org Mode #+STARTUP."
-  :group 'org-msg)
+  :type '(string))
 
 (defcustom org-msg-greeting-fmt nil
   "Mail greeting format.
@@ -81,13 +80,13 @@ If it contains a '%s' format, '%s' is replaced with the first
 name of the person you are replying to.
 
 Example: \"\nHi %s,\n\n\""
-  :group 'org-msg)
+  :type '(string))
 
 (defcustom org-msg-greeting-fmt-mailto nil
   "Define the format behavior for recipient greeting.
 If t and `org-msg-greeting-fmt' contains a '%s' the first name is
 formatted as a mailto link."
-  :group 'org-msg)
+  :type '(boolean))
 
 (defcustom org-msg-signature nil
   "Mail signature string appended if not nil.
@@ -96,7 +95,7 @@ CSS style.
 
 Example:
 \"\n\nRegards,\n\n#+begin_signature\n-- *Your name*\n#+end_signature\""
-  :group 'org-msg)
+  :type '(string))
 
 (defconst org-msg-default-style
   (let* ((font-family '(font-family . "\"Arial\""))
@@ -195,10 +194,13 @@ Example:
   example.
 - string - path to a CSS file: same as t but use this file
   definitions."
-  :group 'org-msg)
+  :type '(choice (file :must-match t)
+		 (list (list symbol symbol
+			     (alist :value-type string)))))
 
 (defcustom org-msg-reply-header-class 'reply-header
-  "Default CSS class for reply header tags.")
+  "Default CSS class for reply header tags."
+  :type '(symbol))
 
 (defun org-msg-save-article-for-reply ()
   "Export the currently visited `gnus-article-buffer' as HTML.
