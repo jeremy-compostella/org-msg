@@ -818,25 +818,35 @@ HTML emails."
     (advice-remove 'org-html--todo #'org-msg-html--todo)
     (advice-remove 'message-mail #'org-msg-post-setup)))
 
+(defvar org-msg-edit-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map org-mode-map)
+    (define-key map (kbd "<tab>") 'org-msg-tab)
+    (define-key map [remap org-export-dispatch] 'org-msg-preview)
+    (define-key map (kbd "C-c C-k") 'message-kill-buffer)
+    (define-key map (kbd "C-c C-s") 'message-goto-subject)
+    (define-key map (kbd "C-c C-b") 'org-msg-goto-body)
+    (define-key map [remap org-attach] 'org-msg-attach)
+    map)
+  "Keymap for `org-msg-edit-mode'.")
+
 (define-derived-mode org-msg-edit-mode org-mode "OrgMsg"
-  "Major mode for editing mail to be sent.
+  "Major mode to compose email using Org mode.
 Like Org Mode but with these additional/changed commands:
-C-c C-c send the message if the cursor is not a C-c C-c org mode
-        controlled region
-C-C C-e `org-msg-preview' (Generate a temporary email and open it
-        with `browse-url'
-C-c C-k `message-kill-buffer' (kill the current buffer)
-C-c C-s `message-goto-subject' (move point to the Subject header)
-C-c C-b `org-msg-goto-body' (move point to the beginning of the
-        message body)
-C-c C-a `org-msg-attach' (call the dispatcher for attachment
-       commands)"
-  (local-set-key (kbd "<tab>") 'org-msg-tab)
-  (local-set-key (kbd "C-c C-e") 'org-msg-preview)
-  (local-set-key (kbd "C-c C-k") 'message-kill-buffer)
-  (local-set-key (kbd "C-c C-s") 'message-goto-subject)
-  (local-set-key (kbd "C-c C-b") 'org-msg-goto-body)
-  (local-set-key (kbd "C-c C-a") 'org-msg-attach)
+Type \\[org-ctrl-c-ctrl-c] to send the message if the cursor is
+  not a C-c C-c Org mode controlled region (Org babel for
+  example).
+Type \\[org-msg-preview] to preview the final email with
+  `browse-url'.
+Type \\[message-kill-buffer] to kill the current OrgMsg buffer.
+Type \\[message-goto-subject] to move the point to the Subject
+  header.
+Type \\[org-msg-goto-body] to move the point to the beginning of
+  the message body.
+Type \\[org-msg-attach] to call the dispatcher for attachment
+  commands.
+
+\\{org-msg-edit-mode-map}"
   (set (make-local-variable 'message-sent-message-via) nil)
   (add-hook 'completion-at-point-functions 'message-completion-function nil t)
   (setq org-font-lock-keywords
