@@ -41,7 +41,9 @@
 
 ;;; Code:
 
-(require 'cl)
+(require 'cl-lib)
+(require 'cl-macs)
+(require 'cl-seq)
 (require 'gnus-art)
 (require 'gnus-msg)
 (require 'htmlize)
@@ -314,7 +316,7 @@ This string can be used as a HTML style attribute value."
 		       (eq class (cadr css)))
 		  (and (not (cadr css))
 		       (eq tag (car css))))))
-    (let* ((sel (remove-if-not #'css-match-p css))
+    (let* ((sel (cl-remove-if-not #'css-match-p css))
 	   (props (apply 'append (mapcar 'caddr sel))))
       (when props
 	(org-msg-props-to-style props)))))
@@ -369,13 +371,13 @@ is the XML tree and CSS the style."
     (let ((e (cdr div)))
       (while e
 	(if (and (stringp (car e))
-		 (eq (caadr e) 'br)
+		 (eq (cl-caadr e) 'br)
 		 (and (stringp (caddr e))
 		      (string-prefix-p "\n " (caddr e))))
 	    (progn
 	      (setcar e (replace-regexp-in-string "\n +" " "
-						  (concat (car e) (caddr e))))
-	      (setcdr e (cdddr e)))
+						  (concat (car e) (cl-caddr e))))
+	      (setcdr e (cl-cdddr e)))
 	  (setf e (cdr e)))))
     ;; Add a bold property to the prefixes like "From", "Date",
     ;; "Subject", ...
