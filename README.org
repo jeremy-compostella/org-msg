@@ -17,9 +17,9 @@ on the reply buffer.
 
 *OrgMsg* provides a ~org-msg-edit-mode~ which is an derivation of [[https://orgmode.org/][Org
 mode]] in which some functionality of [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][Message mode]] are imported or
-replicated. For instance, A *OrgMsg* buffer uses the same
+replicated. For instance, a *OrgMsg* buffer uses the same
 ~font-lock-keywords~ than [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][Message mode]] or the ~TAB~ key while the
-cursor is in the header calls the ~message-tab()~ function.
+cursor is in the header calls the ~message-tab~ function.
 
 For convenience, the original message is quoted below the ~--citation
 follows this line (read-only)--~ marker.  So you can easily refer to
@@ -39,24 +39,23 @@ use [[https://orgmode.org/worg/org-contrib/babel/][Org babel]] to generate an on
 The *OrgMsg* mode keys are the usual key combination used in either
 [[https://orgmode.org/][Org mode]] or [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][Message mode]].
 
-- ~C-c C-e~ -- calls ~org-msg-preview()~, it generates the final HTML
-  email, save it into a temporary file and call the ~browse-url()~
+- ~C-c C-e~ -- calls ~org-msg-preview~, it generates the final HTML
+  email, save it into a temporary file and call the ~browse-url~
   function on that file.
-- ~C-c C-k~ -- calls ~message-kill-buffer()~
-- ~C-c C-s~ -- calls ~message-goto-subject()~ (same as in
-  [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][Message mode]])
-- ~C-c C-b~ -- calls ~org-msg-goto-body()~ (similar to
-  ~message-goto-body()~ in [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][Message mode]])
-- ~C-c C-a~ -- calls ~org-msg-attach()~, very similar to the
-  ~org-attach()~ function.  It lets you add or delete attachment for
+- ~C-c C-k~ -- calls ~message-kill-buffer~
+- ~C-c C-s~ -- calls ~message-goto-subject~ (same as in [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][Message mode]])
+- ~C-c C-b~ -- calls ~org-msg-goto-body~ (similar to
+  ~message-goto-body~ in [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][Message mode]])
+- ~C-c C-a~ -- calls ~org-msg-attach~, very similar to the
+  ~org-attach~ function.  It lets you add or delete attachment for
   this email.  Attachment list is stored in the ~:attachment:~
   property.
-- ~C-c C-c~ -- calls ~org-ctrl-c-ctrl-c()~. *OrgMsg* configures
-  ~org-msg-ctrl-c-ctrl-c()~ as a final hook of [[https://orgmode.org/][Org mode]]. When
-  ~org-msg-ctrl-c-ctrl-c()~ is called in a *OrgMsg* buffer it
-  generates the MIME message and send it.
+- ~C-c C-c~ -- calls ~org-ctrl-c-ctrl-c~. *OrgMsg* configures
+  ~org-msg-ctrl-c-ctrl-c~ as a final hook of [[https://orgmode.org/][Org mode]]. When
+  ~org-msg-ctrl-c-ctrl-c~ is called in a *OrgMsg* buffer it generates
+  the MIME message and send it.
 
-The ~org-msg-mode()~ interactive function can be called to
+The ~org-msg-mode~ interactive function can be called to
 enable/disable *OrgMsg*.  By default, once the module is loaded, it is
 disable.  If you want to reply to an email without making use of
 *OrgMsg*, you should call that function before you call the reply-to
