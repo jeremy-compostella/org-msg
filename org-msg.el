@@ -726,7 +726,9 @@ If the current `message' buffer is a reply, the
 `org-msg-separator' string is inserted at the end of the editing
 area."
   (message-goto-body)
-  (let ((new (= (point) (point-max)))
+  (let ((new (not (and (message-fetch-field "to")
+		       (message-fetch-field "subject"))))
+	(with-original (not (= (point) (point-max))))
 	(reply-to))
     (when (or new (org-msg-article-htmlp))
       (unless new
@@ -734,9 +736,11 @@ area."
       (insert (org-msg-header reply-to))
       (when org-msg-greeting-fmt
 	(insert (format org-msg-greeting-fmt
-			(org-msg-get-to-first-name))))
+			(if new
+			    ""
+			  (org-msg-get-to-first-name)))))
       (save-excursion
-	(unless new
+	(when with-original
 	  (save-excursion
 	    (insert "\n\n" org-msg-separator "\n")
 	    (delete-region (line-beginning-position)
