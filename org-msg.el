@@ -689,18 +689,18 @@ buffer to extract and return the first name.  It is used to
 automatically greet the right name, see `org-msg-greeting-fmt'."
   (save-excursion
     (message-goto-to)
-    (let* ((to (buffer-substring-no-properties
-		(+ (length "To: ") (line-beginning-position))
-		(line-end-position)))
-	   (split (split-string to "[<,]" t "[ \">]+")))
-      (if (or (not split) (= (length split) 1))
-	  ""
-	(let ((first-name (if (= (length split) 2)
-			      (car (split-string (car split) " "))
-			    (cadr split))))
-	  (if org-msg-greeting-fmt-mailto
-	      (format "[[mailto:%s][%s]]" to first-name)
-	    first-name))))))
+    (cl-multiple-value-bind (name mail)
+	(gnus-extract-address-components
+	 (message-fetch-field "to"))
+      (if name
+	  (let* ((split (split-string name ", " t))
+		 (first-name (if (= (length split) 2)
+				 (cadr split)
+			       (car (split-string name " " t)))))
+	    (if org-msg-greeting-fmt-mailto
+		(format "[[mailto:%s][%s]]" mail first-name)
+	      first-name))
+	""))))
 
 (defun org-msg-header (reply-to)
   "Build the Org OPTIONS and PROPERTIES blocks.
