@@ -880,7 +880,9 @@ HTML emails."
 	(advice-add 'mml-expand-html-into-multipart-related
 		    :around #'org-msg-mml-into-multipart-related)
 	(advice-add 'org-html--todo :around #'org-msg-html--todo)
-	(advice-add 'message-mail :after #'org-msg-post-setup))
+	(advice-add 'message-mail :after #'org-msg-post-setup)
+	(when (boundp 'bbdb-mua-mode-alist)
+	  (add-to-list 'bbdb-mua-mode-alist '(message org-msg-edit-mode))))
     (remove-hook 'gnus-message-setup-hook 'org-msg-post-setup)
     (remove-hook 'message-send-hook 'org-msg-prepare-to-send)
     (remove-hook 'org-ctrl-c-ctrl-c-final-hook 'org-msg-ctrl-c-ctrl-c)
@@ -889,7 +891,10 @@ HTML emails."
     (advice-remove 'mml-expand-html-into-multipart-related
 		   #'org-msg-mml-into-multipart-related)
     (advice-remove 'org-html--todo #'org-msg-html--todo)
-    (advice-remove 'message-mail #'org-msg-post-setup)))
+    (advice-remove 'message-mail #'org-msg-post-setup)
+    (when (boundp 'bbdb-mua-mode-alist)
+      (setq bbdb-mua-mode-alist (delete '(message org-msg-edit-mode)
+					bbdb-mua-mode-alist)))))
 
 (defvar org-msg-edit-mode-map
   (let ((map (make-sparse-keymap)))
