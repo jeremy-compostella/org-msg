@@ -276,31 +276,14 @@ Example:
   :type '(symbol))
 
 (defun org-msg-save-article-for-reply ()
-  "Export the currently visited `gnus-article-buffer' as HTML.
-It exports in a file using the `gnus-article-browse-html-article'
-function.  If the current article contains other HTML emails as
-attachments, the `browse-url-browser-function' is called several
-times.  We only keep track of the first call which is usually the
-actual email we want to reply to.  The
-`gnus-article-browse-html-article' also extract all the inline
-images.  This function returns the absolute path of the HTML
-file."
-  (let* ((pages '())
-	 (save-page (lambda (url &optional _args) (push url pages)))
-	 (browse-url-browser-function save-page))
-    (cl-letf (((symbol-function 'gnus-summary-show-article) #'ignore))
-      (save-window-excursion
-	(gnus-article-browse-html-article)))
-    (substring (car (last pages)) (length "file://"))))
-
-(defun org-msg-attrs-str (attr)
-  "Convert ATTR list of attributes into a string."
-  (cl-flet ((attr-str (x)
-	      (concat " " (symbol-name (car x)) "=\""
-		      (xml-escape-string (cdr x)) "\"")))
-    (if attr
-	(apply 'concat (mapcar #'attr-str attr))
-      "")))
+  (with-current-buffer mu4e~view-buffer-name
+    (let ((body-html (mu4e-message-field-at-point :body-html))
+	  (tmp-file (concat "/tmp/" (mu4e-message-field-at-point :message-id))))
+      (with-current-buffer (find-file-noselect tmp-file)
+	(erase-buffer)
+	(insert body-html)
+	(save-buffer))
+      tmp-file)))
 
 (defun org-msg-xml-escape-string (string)
   "Convert STRING into a string containing valid XML character data.
@@ -711,14 +694,8 @@ REPLY-TO is the file path of the original email export in HTML."
 		  (or reply-to ""))))
 
 (defun org-msg-article-htmlp ()
-  "Return t if the current article is HTML article.
-If the currently visited article (`gnus-article-buffer') contains
-a html mime part, it returns t, nil otherwise."
-  (let* ((parts (with-current-buffer gnus-article-buffer
-		  (set-buffer gnus-original-article-buffer)
-		  (mm-dissect-buffer t t)))
-	 (str (format "%s" parts)))
-    (string-match-p "text/html" str)))
+  (with-current-buffer mu4e~view-buffer-name
+    (when (mu4e-message-field-at-point :body-html) t)))
 
 (defun org-msg-post-setup (&rest _args)
   "Transform the current `message' buffer into a OrgMsg buffer.
@@ -878,6 +855,7 @@ HTML emails."
   (if org-msg-mode
       (progn
 	(add-hook 'gnus-message-setup-hook 'org-msg-post-setup)
+	(add-hook 'mu4e-compose-mode-hook 'org-msg-post-setup)
 	(add-hook 'message-send-hook 'org-msg-prepare-to-send)
 	(add-hook 'org-ctrl-c-ctrl-c-final-hook 'org-msg-ctrl-c-ctrl-c)
 	(add-to-list 'message-syntax-checks '(invisible-text . disabled))
@@ -888,6 +866,7 @@ HTML emails."
 	(when (boundp 'bbdb-mua-mode-alist)
 	  (add-to-list 'bbdb-mua-mode-alist '(message org-msg-edit-mode))))
     (remove-hook 'gnus-message-setup-hook 'org-msg-post-setup)
+    (remove-hook 'mu4e-compose-mode-hook 'org-msg-post-setup)
     (remove-hook 'message-send-hook 'org-msg-prepare-to-send)
     (remove-hook 'org-ctrl-c-ctrl-c-final-hook 'org-msg-ctrl-c-ctrl-c)
     (setq message-syntax-checks (delete '(invisible-text . disabled)
@@ -935,6 +914,10 @@ Type \\[org-msg-attach] to call the dispatcher for attachment
 	(append org-font-lock-keywords message-font-lock-keywords
 		org-msg-font-lock-keywords))
   (toggle-truncate-lines)
+  (mu4e~compose-remap-faces)
+  (mu4e~start)
+  (when mu4e-compose-complete-addresses
+    (mu4e~compose-setup-completion))
   (unless (= (org-msg-end) (point-max))
     (add-text-properties (1- (org-msg-end)) (point-max) '(read-only t))))
 
