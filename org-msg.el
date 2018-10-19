@@ -275,7 +275,20 @@ Example:
   "Default CSS class for reply header tags."
   :type '(symbol))
 
-(defun org-msg-save-article-for-reply ()
+(defcustom org-msg-supported-mua '((message-user-agent . "gnus"))
+  "Supported Mail User Agents."
+  :type '(alist :value-type string))
+
+(defun org-msg-mua-call (sym &rest arg)
+  "Call the specific backend implementation for SYM."
+  (let ((mua (assoc-default mail-user-agent org-msg-supported-mua)))
+    (if mua
+	(let ((fun (intern (format "org-msg-%s-%s" sym mua))))
+	  (when (functionp fun)
+	    (apply fun arg)))
+      (error "Backend not found"))))
+
+(defun org-msg-save-article-for-reply-gnus ()
   "Export the currently visited `gnus-article-buffer' as HTML.
 It exports in a file using the `gnus-article-browse-html-article'
 function.  If the current article contains other HTML emails as
@@ -710,8 +723,8 @@ REPLY-TO is the file path of the original email export in HTML."
 	  (format ":PROPERTIES:\n:reply-to: %s\n:attachment: \n:END:\n"
 		  (or reply-to ""))))
 
-(defun org-msg-article-htmlp ()
-  "Return t if the current article is HTML article.
+(defun org-msg-article-htmlp-gnus ()
+  "Return t if the current gnus article is HTML article.
 If the currently visited article (`gnus-article-buffer') contains
 a html mime part, it returns t, nil otherwise."
   (let* ((parts (with-current-buffer gnus-article-buffer
@@ -730,9 +743,9 @@ area."
 		       (message-fetch-field "subject"))))
 	(with-original (not (= (point) (point-max))))
 	(reply-to))
-    (when (or new (org-msg-article-htmlp))
+    (when (or new (org-msg-mua-call 'article-htmlp))
       (unless new
-	(setq reply-to (org-msg-save-article-for-reply)))
+	(setq reply-to (org-msg-mua-call 'save-article-for-reply)))
       (insert (org-msg-header reply-to))
       (when org-msg-greeting-fmt
 	(insert (format org-msg-greeting-fmt
@@ -840,6 +853,12 @@ d       Delete one attachment, you will be prompted for a file name.")))
 	   (goto-char citation-start))
 	 (re-search-forward ,regexp (point-max) t)))))
 
+(defun org-msg-mode-gnus ()
+  "Setup the hook for gnus mail user agent."
+  (if org-msg-mode
+      (add-hook 'gnus-message-setup-hook 'org-msg-post-setup)
+    (remove-hook 'gnus-message-setup-hook 'org-msg-post-setup)))
+
 (define-minor-mode org-msg-mode
   "Toggle OrgMsg mode.
 With a prefix argument ARG, enable Delete Selection mode if ARG
@@ -850,9 +869,9 @@ When OrgMsg mode is enabled, the Message mode behavior is
 modified to make use of Org Mode for mail composition and build
 HTML emails."
   :global t
+  (org-msg-mua-call 'mode)
   (if org-msg-mode
       (progn
-	(add-hook 'gnus-message-setup-hook 'org-msg-post-setup)
 	(add-hook 'message-send-hook 'org-msg-prepare-to-send)
 	(add-hook 'org-ctrl-c-ctrl-c-final-hook 'org-msg-ctrl-c-ctrl-c)
 	(add-to-list 'message-syntax-checks '(invisible-text . disabled))
@@ -862,7 +881,6 @@ HTML emails."
 	(advice-add 'message-mail :after #'org-msg-post-setup)
 	(when (boundp 'bbdb-mua-mode-alist)
 	  (add-to-list 'bbdb-mua-mode-alist '(message org-msg-edit-mode))))
-    (remove-hook 'gnus-message-setup-hook 'org-msg-post-setup)
     (remove-hook 'message-send-hook 'org-msg-prepare-to-send)
     (remove-hook 'org-ctrl-c-ctrl-c-final-hook 'org-msg-ctrl-c-ctrl-c)
     (setq message-syntax-checks (delete '(invisible-text . disabled)
@@ -935,6 +953,7 @@ Type \\[org-msg-attach] to call the dispatcher for attachment
 	(append org-font-lock-keywords message-font-lock-keywords
 		org-msg-font-lock-keywords))
   (toggle-truncate-lines)
+  (org-msg-mua-call 'edit-mode)
   (unless (= (org-msg-end) (point-max))
     (add-text-properties (1- (org-msg-end)) (point-max) '(read-only t))))
 
