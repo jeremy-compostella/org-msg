@@ -840,31 +840,6 @@ d       Delete one attachment, you will be prompted for a file name.")))
 	   (goto-char citation-start))
 	 (re-search-forward ,regexp (point-max) t)))))
 
-(defvar org-msg-font-lock-keywords
-  (let ((content "[ \t]*\\(.+\\(\n[ \t].*\\)*\\)\n?"))
-    `((,(org-msg-font-lock-make-header-matcher
-	 (concat "^\\([Tt]o:\\)" content))
-       (1 'message-header-name)
-       (2 'message-header-to nil t))
-      (,(org-msg-font-lock-make-header-matcher
-	 (concat "^\\(^[GBF]?[Cc][Cc]:\\|^[Rr]eply-[Tt]o:\\)" content))
-       (1 'message-header-name)
-       (2 'message-header-cc nil t))
-      (,(org-msg-font-lock-make-header-matcher
-	 (concat "^\\([Ss]ubject:\\)" content))
-       (1 'message-header-name)
-       (2 'message-header-subject nil t))
-      (,(org-msg-font-lock-make-header-matcher
-	 (concat "^\\([A-Z][^: \n\t]+:\\)" content))
-       (1 'message-header-name)
-       (2 'message-header-other nil t))
-      ,@(if (and org-msg-separator
-		 (not (equal org-msg-separator "")))
-	    `((,(concat "^\\(" (regexp-quote org-msg-separator) "\\)$")
-	       1 'message-separator))
-	  nil)))
-  "Additional expressions to highlight in OrgMsg mode.")
-
 (define-minor-mode org-msg-mode
   "Toggle OrgMsg mode.
 With a prefix argument ARG, enable Delete Selection mode if ARG
@@ -899,6 +874,31 @@ HTML emails."
     (when (boundp 'bbdb-mua-mode-alist)
       (setq bbdb-mua-mode-alist (delete '(message org-msg-edit-mode)
 					bbdb-mua-mode-alist)))))
+
+(defvar org-msg-font-lock-keywords
+  (let ((content "[ \t]*\\(.+\\(\n[ \t].*\\)*\\)\n?"))
+    `((,(org-msg-font-lock-make-header-matcher
+	 (concat "^\\([Tt]o:\\)" content))
+       (1 'message-header-name)
+       (2 'message-header-to nil t))
+      (,(org-msg-font-lock-make-header-matcher
+	 (concat "^\\(^[GBF]?[Cc][Cc]:\\|^[Rr]eply-[Tt]o:\\)" content))
+       (1 'message-header-name)
+       (2 'message-header-cc nil t))
+      (,(org-msg-font-lock-make-header-matcher
+	 (concat "^\\([Ss]ubject:\\)" content))
+       (1 'message-header-name)
+       (2 'message-header-subject nil t))
+      (,(org-msg-font-lock-make-header-matcher
+	 (concat "^\\([A-Z][^: \n\t]+:\\)" content))
+       (1 'message-header-name)
+       (2 'message-header-other nil t))
+      ,@(if (and org-msg-separator
+		 (not (equal org-msg-separator "")))
+	    `((,(concat "^\\(" (regexp-quote org-msg-separator) "\\)$")
+	       1 'message-separator))
+	  nil)))
+  "Additional expressions to highlight in OrgMsg mode.")
 
 (defvar org-msg-edit-mode-map
   (let ((map (make-sparse-keymap)))
