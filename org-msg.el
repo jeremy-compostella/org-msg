@@ -275,7 +275,8 @@ Example:
   "Default CSS class for reply header tags."
   :type '(symbol))
 
-(defcustom org-msg-supported-mua '((message-user-agent . "gnus"))
+(defcustom org-msg-supported-mua '((message-user-agent . "gnus")
+				   (mu4e-user-agent . "mu4e"))
   "Supported Mail User Agents."
   :type '(alist :value-type string))
 
@@ -305,6 +306,16 @@ file."
       (save-window-excursion
 	(gnus-article-browse-html-article)))
     (substring (car (last pages)) (length "file://"))))
+
+(defun org-msg-save-article-for-reply-mu4e ()
+  "Export the currently visited mu4e article as HTML."
+  (with-current-buffer mu4e~view-buffer-name
+    (let ((html (mu4e-message-field-at-point :body-html))
+	  (file (concat "/tmp/" (mu4e-message-field-at-point :message-id))))
+      (with-temp-buffer
+	(insert html)
+	(write-file file))
+      file)))
 
 (defun org-msg-attrs-str (attr)
   "Convert ATTR list of attributes into a string."
@@ -733,6 +744,11 @@ a html mime part, it returns t, nil otherwise."
 	 (str (format "%s" parts)))
     (string-match-p "text/html" str)))
 
+(defun org-msg-article-htmlp-mu4e ()
+  "Return t if the current mu4e article is HTML article."
+  (with-current-buffer mu4e~view-buffer-name
+    (when (mu4e-message-field-at-point :body-html) t)))
+
 (defun org-msg-post-setup (&rest _args)
   "Transform the current `message' buffer into a OrgMsg buffer.
 If the current `message' buffer is a reply, the
@@ -858,6 +874,12 @@ d       Delete one attachment, you will be prompted for a file name.")))
   (if org-msg-mode
       (add-hook 'gnus-message-setup-hook 'org-msg-post-setup)
     (remove-hook 'gnus-message-setup-hook 'org-msg-post-setup)))
+
+(defun org-msg-mode-mu4e ()
+  "Setup the hook for mu4e mail user agent."
+  (if org-msg-mode
+      (add-hook 'mu4e-compose-mode-hook 'org-msg-post-setup)
+    (remove-hook 'mu4e-compose-mode-hook 'org-msg-post-setup)))
 
 (define-minor-mode org-msg-mode
   "Toggle OrgMsg mode.
