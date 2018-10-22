@@ -940,6 +940,13 @@ HTML emails."
 	  nil)))
   "Additional expressions to highlight in OrgMsg mode.")
 
+(defun org-msg-edit-mode-mu4e ()
+  "Setup mu4e faces, addresses completion and run mu4e"
+  (mu4e~compose-remap-faces)
+  (mu4e~start)
+  (when mu4e-compose-complete-addresses
+    (mu4e~compose-setup-completion)))
+
 (defvar org-msg-edit-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map org-mode-map)
