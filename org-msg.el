@@ -314,6 +314,9 @@ file."
 	  (file (concat "/tmp/" (mu4e-message-field-at-point :message-id))))
       (with-temp-buffer
 	(insert html)
+	(goto-char (point-min))
+	(when (re-search-forward "^<html>" nil t)
+	  (delete-region (point-min) (match-beginning 0)))
 	(write-file file))
       file)))
 
