@@ -866,6 +866,14 @@ d       Delete one attachment, you will be prompted for a file name.")))
 	   (goto-char citation-start))
 	 (re-search-forward ,regexp (point-max) t)))))
 
+(defun org-msg-kill-buffer ()
+  "Delete temporary files."
+  (let ((files (org-msg-get-prop "reply-to")))
+    (dolist (file files)
+      (when (and (not (string= "" file)) (file-exists-p file))
+	(cond ((file-directory-p file) (delete-directory file t))
+	      ((delete-file file)))))))
+
 (defun org-msg-mode-gnus ()
   "Setup the hook for gnus mail user agent."
   (if org-msg-mode
@@ -982,6 +990,7 @@ Type \\[org-msg-attach] to call the dispatcher for attachment
 		org-msg-font-lock-keywords))
   (toggle-truncate-lines)
   (org-msg-mua-call 'edit-mode)
+  (setq-local kill-buffer-hook 'org-msg-kill-buffer)
   (unless (= (org-msg-end) (point-max))
     (add-text-properties (1- (org-msg-end)) (point-max) '(read-only t))))
 
