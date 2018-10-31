@@ -294,13 +294,6 @@ Example:
 	    (apply fun arg)))
       (error "Backend not found"))))
 
-(defun org-msg-remove-article-for-reply ()
-  "Remove the article reply file"
-  (let ((file (org-msg-get-prop "reply-to")))
-    (when (and (not (string-match "" file))
-	       (file-exists-p file))
-      (delete-file file))))
-
 (defun org-msg-save-article-for-reply-gnus ()
   "Export the currently visited `gnus-article-buffer' as HTML.
 It exports in a file using the `gnus-article-browse-html-article'
@@ -662,7 +655,6 @@ This function is a hook for `message-send-hook'."
 	  (unless (file-exists-p file)
 	    (error "File '%s' does not exist" file)))
 	(setq org-msg-attachment attachments)
-	(org-msg-remove-article-for-reply)
 	(message-goto-body)
 	(delete-region (point) (point-max))
 	(mml-insert-part "text/html")
