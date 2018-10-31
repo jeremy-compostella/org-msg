@@ -281,7 +281,7 @@ Example:
   :type '(alist :value-type string))
 
 (defun org-msg-mua-call (sym &rest arg)
-  "Call the specific backend implementation for SYM."
+  "Call the specific MUA function for SYM with ARG parameters."
   (let ((mua (assoc-default mail-user-agent org-msg-supported-mua)))
     (if mua
 	(let ((fun (intern (format "org-msg-%s-%s" sym mua))))
