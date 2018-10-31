@@ -892,6 +892,7 @@ HTML emails."
   (if org-msg-mode
       (progn
 	(add-hook 'message-send-hook 'org-msg-prepare-to-send)
+	(add-hook 'message-sent-hook 'undo)
 	(add-hook 'org-ctrl-c-ctrl-c-final-hook 'org-msg-ctrl-c-ctrl-c)
 	(add-to-list 'message-syntax-checks '(invisible-text . disabled))
 	(advice-add 'mml-expand-html-into-multipart-related
@@ -901,6 +902,7 @@ HTML emails."
 	(when (boundp 'bbdb-mua-mode-alist)
 	  (add-to-list 'bbdb-mua-mode-alist '(message org-msg-edit-mode))))
     (remove-hook 'message-send-hook 'org-msg-prepare-to-send)
+    (remove-hook 'message-sent-hook 'undo)
     (remove-hook 'org-ctrl-c-ctrl-c-final-hook 'org-msg-ctrl-c-ctrl-c)
     (setq message-syntax-checks (delete '(invisible-text . disabled)
 					message-syntax-checks))
