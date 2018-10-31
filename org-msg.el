@@ -575,25 +575,12 @@ absolute paths."
 (defun org-msg-get-prop (prop)
   "Return the Org PROP property value, nil if undefined."
   (org-msg-with-match-prop prop
-    (match-string-no-properties 3)))
+    (read (match-string-no-properties 3))))
 
 (defun org-msg-set-prop (prop val)
   "Set the Org PROP property value to VAL."
   (org-msg-with-match-prop prop
-    (replace-match val nil nil nil 3)))
-
-(defun org-msg-get-attachment ()
-  "Return the list of attachment as a list of path to file."
-  (let ((str (org-msg-get-prop "attachment")))
-    (when str
-      (read (concat "(" str ")")))))
-
-(defsubst org-msg-set-attachment (files)
-  "Set the list of attachment.
-FILES is a list of path to file."
-  (org-msg-set-prop "attachment"
-		    (mapconcat (lambda (file) (format "%S" file))
-			       files " ")))
+    (replace-match (format "%S" val) nil nil nil 3)))
 
 (defun org-msg-build ()
   "Build and return the XML tree for current OrgMsg buffer."
@@ -650,7 +637,7 @@ This function is a hook for `message-send-hook'."
   (save-window-excursion
     (when (eq major-mode 'org-msg-edit-mode)
       (let ((mail (org-msg-build))
-	    (attachments (org-msg-get-attachment)))
+	    (attachments (org-msg-get-prop "attachment")))
 	(dolist (file attachments)
 	  (unless (file-exists-p file)
 	    (error "File '%s' does not exist" file)))
@@ -739,8 +726,8 @@ automatically greet the right name, see `org-msg-greeting-fmt'."
 REPLY-TO is the file path of the original email export in HTML."
   (concat (format "#+OPTIONS: %s d:nil\n#+STARTUP: %s\n"
 		  (or org-msg-options "") (or org-msg-startup ""))
-	  (format ":PROPERTIES:\n:reply-to: %s\n:attachment: \n:END:\n"
-		  (or reply-to ""))))
+	  (format ":PROPERTIES:\n:reply-to: %S\n:attachment: nil\n:END:\n"
+		  reply-to)))
 
 (defun org-msg-article-htmlp-gnus ()
   "Return t if the current gnus article is HTML article.
@@ -812,15 +799,15 @@ function is called.  `org-cycle' is called otherwise."
 (defun org-msg-attach-attach (file)
   "Link FILE into the list of attachment."
   (interactive (list (ido-read-file-name "File to attach: ")))
-  (let ((files (org-msg-get-attachment)))
-    (org-msg-set-attachment (push file files))))
+  (let ((files (org-msg-get-prop "attachment")))
+    (org-msg-set-prop "attachment" (push file files))))
 
 (defun org-msg-attach-delete ()
   "Delete a single attachment."
   (interactive)
-  (let* ((files (org-msg-get-attachment))
+  (let* ((files (org-msg-get-prop "attachment"))
 	 (d (ido-completing-read "File to remove: " files)))
-    (org-msg-set-attachment (delete d files))))
+    (org-msg-set-prop "attachment" (delete d files))))
 
 (defun org-msg-attach ()
   "The dispatcher for attachment commands.
