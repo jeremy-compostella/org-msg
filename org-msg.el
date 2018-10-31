@@ -304,13 +304,15 @@ actual email we want to reply to.  The
 `gnus-article-browse-html-article' also extract all the inline
 images.  This function returns the absolute path of the HTML
 file."
-  (let* ((pages '())
-	 (save-page (lambda (url &optional _args) (push url pages)))
-	 (browse-url-browser-function save-page))
+  (let* ((browse-url-browser-function #'ignore)
+	 (save (copy-list gnus-article-browse-html-temp-list)))
     (cl-letf (((symbol-function 'gnus-summary-show-article) #'ignore))
       (save-window-excursion
 	(gnus-article-browse-html-article)))
-    (substring (car (last pages)) (length "file://"))))
+    (let ((temp-files (cl-set-difference gnus-article-browse-html-temp-list save
+					 :test 'string=)))
+      (setq gnus-article-browse-html-temp-list save)
+      temp-files)))
 
 (defun org-msg-save-article-for-reply-mu4e ()
   "Export the currently visited mu4e article as HTML."
@@ -323,7 +325,7 @@ file."
 	(when (re-search-forward "^<html>" nil t)
 	  (delete-region (point-min) (match-beginning 0)))
 	(write-file file))
-      file)))
+      (list file))))
 
 (defun org-msg-attrs-str (attr)
   "Convert ATTR list of attributes into a string."
@@ -601,9 +603,9 @@ absolute paths."
 			       (setcdr src (substring (cdr src) (length "file://")))))))
       (let* ((org (buffer-substring-no-properties (org-msg-start) (org-msg-end)))
 	     (reply (org-msg-org-to-xml org default-directory))
-	     (original-file (org-msg-get-prop "reply-to"))
-	     (original (unless (string= "" original-file)
-			 (org-msg-load-html-file original-file))))
+	     (temp-files (org-msg-get-prop "reply-to"))
+	     (original (when temp-files
+			 (org-msg-load-html-file (car temp-files)))))
 	(assq-delete-all 'h1 (assq 'div (assq 'body reply)))
 	(org-msg-xml-walk (assq 'body reply) #'fix-img-src)
 	(when css
