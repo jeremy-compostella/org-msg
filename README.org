@@ -1,6 +1,6 @@
-*OrgMsg* is a [[https://www.gnu.org/software/emacs/][GNU/Emacs]] global minor mode mixing up [[https://orgmode.org/][Org mode]] and
-[[https://www.gnu.org/software/emacs/manual/html_mono/message.html][Message mode]] to compose and reply to emails in a Outlook HTML friendly
-style.
+*OrgMsg* is a [[https://www.gnu.org/software/emacs/][GNU/Emacs]] global minor mode mixing up [[https://orgmode.org/][Org mode]] and your
+Mail User Agent Mode ([[https://www.gnu.org/software/emacs/manual/html_mono/message.html][Message mode]] or [[https://www.djcbsoftware.nl/code/mu/mu4e/][mu4e mode]]) to compose and reply
+to emails in a Outlook HTML friendly style.
 
 [[https://melpa.org/#/org-msg][https://melpa.org/packages/org-msg-badge.svg]]
 
@@ -16,16 +16,22 @@ original message is in the HTML form, it activates the *OrgMsg* mode
 on the reply buffer.
 
 *OrgMsg* provides a ~org-msg-edit-mode~ which is an derivation of [[https://orgmode.org/][Org
-mode]] in which some functionality of [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][Message mode]] are imported or
-replicated. For instance, a *OrgMsg* buffer uses the same
-~font-lock-keywords~ than [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][Message mode]] or the ~TAB~ key while the
-cursor is in the header calls the ~message-tab~ function.
+mode]] in which some functionality of the current Mail User Agent
+([[https://www.gnu.org/software/emacs/manual/html_mono/message.html][Message mode]] or [[https://www.djcbsoftware.nl/code/mu/mu4e/][mu4e mode]]) are imported or replicated. For instance,
+a *OrgMsg* buffer uses the same ~font-lock-keywords~ than [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][Message mode]]
+or the ~TAB~ key while the cursor is in the header calls the
+~message-tab~ function.
 
 For convenience, the original message is quoted below the ~--citation
 follows this line (read-only)--~ marker.  So you can easily refer to
 the original message.  However, the entire quoted text is read-only
 because *OrgMsg* does not support modification of the original
 content.
+
+*OrgMsg* has a mechanism to support different Mail User Agents
+(message, mu4e, ...).  Each function which depends on the Mail User
+Agent calls ~org-msg-mua-call~ function which is an indirection to the
+OrgMsg Mail User Agent specific function.
 
 Outlook email are really poor compared to what can be achieved by [[https://orgmode.org/][Org
 mode]].  I personally use the ~#+{begin|end}_quote~ to quote part of the

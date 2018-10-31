@@ -24,9 +24,9 @@
 
 ;;; Commentary:
 
-;; OrgMsg is a GNU/Emacs global minor mode mixing up Org mode and
-;; Message mode to compose and reply to emails in a HTML friendly
-;; style.
+;; OrgMsg is a GNU/Emacs global minor mode mixing up Org mode and your
+;; Mail User Agent Mode to compose and reply to emails in a HTML
+;; friendly style.
 
 ;; * Presentation
 
@@ -36,16 +36,21 @@
 ;; the HTML form, it activates the OrgMsg mode on the reply buffer.
 
 ;; OrgMsg provides a `org-msg-edit-mode' which is an derivation of Org
-;; mode in which some functionality of Message mode are imported or
-;; replicated.  For instance, a OrgMsg buffer uses the same
-;; `font-lock-keywords' than Message mode or the `TAB' key while the
-;; cursor is in the header calls the `message-tab' function.
+;; mode in which some functionality of your Mail User Agent are
+;; imported or replicated.  For instance, a OrgMsg buffer uses the
+;; same `font-lock-keywords' than Message mode or the `TAB' key while
+;; the cursor is in the header calls the `message-tab' function.
 
 ;; For convenience, the original message is quoted below the
 ;; `--citation follows this line (read-only)--' marker.  So you can
 ;; easily refer to the original message.  However, the entire quoted
 ;; text is read-only because OrgMsg does not support modification of
 ;; the original content.
+
+;; OrgMsg has a mechanism to support different Mail User Agents
+;; (message, mu4e, ...).  Each function which depends on the Mail User
+;; Agent calls the `org-msg-mua-call' which is an indirection to the
+;; OrgMsg Mail User Agent specific function.
 
 ;; * Keys and interactive functions
 
