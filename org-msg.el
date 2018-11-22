@@ -314,16 +314,45 @@ file."
       (setq gnus-article-browse-html-temp-list save)
       temp-files)))
 
+(defun org-msg-insert-reply-header-mu4e (from subject to date)
+  "Insert formatted reply header in HTML format.
+This is replication of the reply header format returned by
+`gnus-article-browse-html-article'."
+  (cl-macrolet ((field-str (list)
+                `(mapconcat (lambda (e)
+			      (format "\"%s\" &lt;%s&gt;" (car e) (cdr e)))
+			    ,list ", ")))
+    (let ((from-str (field-str from))
+    	  (to-str (field-str to))
+    	  (date-str (format-time-string "%a, %d %b %Y %T %z" date)))
+      (insert (concat "<div align=\"left\">\n"
+		      (format "From: %s<br>\n" from-str)
+		      (format "Subject: %s<br>\n" subject)
+		      (format "To: %s<br>\n" to-str)
+		      (format "Date: %s<br>\n" date-str)
+		      "</div>\n<hr>\n")))))
+
 (defun org-msg-save-article-for-reply-mu4e ()
   "Export the currently visited mu4e article as HTML."
   (with-current-buffer mu4e~view-buffer-name
-    (let ((html (mu4e-message-field-at-point :body-html))
-	  (file (concat "/tmp/" (mu4e-message-field-at-point :message-id))))
+    (let* ((msg (mu4e-message-at-point))
+	   (from (mu4e-message-field msg :from))
+	   (subject (mu4e-message-field msg :subject))
+	   (to (mu4e-message-field msg :to))
+	   (date (mu4e-message-field msg :date))
+	   (html (mu4e-message-field msg :body-html))
+	   (file (concat "/tmp/" (mu4e-message-field msg :message-id))))
       (with-temp-buffer
 	(insert html)
+	;; Remove everything before html tag
 	(goto-char (point-min))
-	(when (re-search-forward "^<html>" nil t)
+	(when (re-search-forward "^<html\\(.*?\\)>" nil t)
 	  (delete-region (point-min) (match-beginning 0)))
+	(goto-char (point-min))
+	;; Insert reply header after body tag
+	(when (re-search-forward "<body\\(.*?\\)>" nil t)
+	  (goto-char (match-end 0))
+	  (org-msg-insert-reply-header-mu4e from subject to date))
 	(write-file file))
       (list file))))
 
