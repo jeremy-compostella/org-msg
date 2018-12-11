@@ -530,7 +530,9 @@ absolute paths."
 		     (let ((file (concat base (cdr src))))
 		       (if (file-exists-p file)
 			   (setcdr src (concat base (cdr src)))
-			 (error "'%s' Image is missing" file)))))))))
+			 (unless (y-or-n-p (format "'%s' Image is missing,\
+ do you want to continue ?" file))
+			   (error "'%s' Image is missing" file))))))))))
     (let ((xml (libxml-parse-html-region (point-min) (point-max))))
       (when base
 	(org-msg-xml-walk xml #'make-img-abs))
