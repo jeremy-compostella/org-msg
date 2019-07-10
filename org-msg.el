@@ -802,7 +802,7 @@ function is called.  `org-cycle' is called otherwise."
 
 (defun org-msg-attach-attach (file)
   "Link FILE into the list of attachment."
-  (interactive (list (ido-read-file-name "File to attach: ")))
+  (interactive (list (read-file-name "File to attach: ")))
   (let ((files (org-msg-get-prop "attachment")))
     (org-msg-set-prop "attachment" (push file files))))
 
@@ -810,7 +810,7 @@ function is called.  `org-cycle' is called otherwise."
   "Delete a single attachment."
   (interactive)
   (let* ((files (org-msg-get-prop "attachment"))
-	 (d (ido-completing-read "File to remove: " files)))
+	 (d (completing-read "File to remove: " files)))
     (org-msg-set-prop "attachment" (delete d files))))
 
 (defun org-msg-attach ()
