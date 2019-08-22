@@ -825,11 +825,11 @@ command."
 	  (princ "Select an Attachment Command:
 
 a       Select a file and attach it this mail.
-d       Delete one attachment, you will be prompted for a file name.")))
+d       Delete one attachment, you will be prompted for a file name."))
 	(org-fit-window-to-buffer (get-buffer-window "*Org Attach*"))
 	(message "Select command: [ad]")
 	(setq c (read-char-exclusive))
-	(and (get-buffer "*Org Attach*") (kill-buffer "*Org Attach*")))
+	(and (get-buffer "*Org Attach*") (kill-buffer "*Org Attach*"))))
     (cond ((memq c '(?a ?\C-a)) (call-interactively 'org-msg-attach-attach))
 	  ((memq c '(?d ?\C-d)) (call-interactively 'org-msg-attach-delete)))))
 
