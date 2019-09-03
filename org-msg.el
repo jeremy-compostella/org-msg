@@ -589,7 +589,8 @@ absolute paths."
 
 (defun org-msg-build ()
   "Build and return the XML tree for current OrgMsg buffer."
-  (let ((css (org-msg-load-css)))
+  (let ((css (org-msg-load-css))
+        (reply-element (if 'org-html-html5-fancy 'article 'div)))
     (cl-flet ((enforce (xml)
 	       (let* ((tag (car xml))
 		      (tmp (assq 'class (cadr xml)))
@@ -617,7 +618,7 @@ absolute paths."
 	(if (not original)
 	    (assq-delete-all 'script (assq 'head reply))
 	  (org-msg-improve-reply-header original css)
-	  (push (assq 'div (assq 'body reply)) (cddr (assq 'body original))))
+	  (push (assq 'reply-element (assq 'body reply)) (cddr (assq 'body original))))
 	(or original reply)))))
 
 (defun org-msg-preview (arg)
