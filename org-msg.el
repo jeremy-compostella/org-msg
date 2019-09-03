@@ -558,10 +558,10 @@ absolute paths."
 	    (org-html-head-include-scripts nil)
 	    (org-html-head-include-default-style nil)
 	    (org-msg-export-in-progress t))
-	(org-html-export-as-html))
-      (let ((xml (org-msg-html-buffer-to-xml base)))
-	(kill-buffer)
-	xml))))
+	(with-current-buffer (org-html-export-as-html)
+	  (let ((xml (org-msg-html-buffer-to-xml base)))
+	    (kill-buffer)
+	    xml))))))
 
 (defun org-msg-load-css ()
   "Load the CSS definition according to `org-msg-enforce-css'."
