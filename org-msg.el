@@ -981,6 +981,7 @@ HTML emails."
   "Setup mu4e faces, addresses completion and run mu4e."
   (mu4e~compose-remap-faces)
   (mu4e~start)
+  (mu4e~compose-setup-fcc-maybe)
   (when mu4e-compose-complete-addresses
     (mu4e~compose-setup-completion)))
 
