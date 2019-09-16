@@ -712,26 +712,29 @@ This function is used as an advice function of `org-html--todo'.
 - ORIG-FUN is the original function.
 - TODO is a TODO keyword.
 - INFO is a property list."
-   (cl-macrolet ((add-if-exist (val lst sym)
-  	         `(when ,val
-		    (push (cons ,sym (apply 'color-rgb-to-hex
-					    (color-name-to-rgb ,val)))
-			  ,lst))))
-    (if org-msg-export-in-progress
-	(let ((face (org-get-todo-face todo)))
-	  (when (and todo face)
-	    (let (props)
-	      (add-if-exist (htmlize-face-foreground face) props 'color)
-	      (add-if-exist (htmlize-face-background face) props
-			    'background-color)
-	      (format "<span%s>%s</span>"
-		      (if props
-			  (format " style=\"%s\"" (org-msg-props-to-style props))
-			"")
-		      todo))))
-      (if info
-	  (funcall orig-fun todo info)
-	(funcall orig-fun todo)))))
+  (cl-flet ((rgb-to-hex (r g b)
+	     (format "#%02x%02x%02x" (* r 255) (* g 255) (* b 255))))
+    (cl-macrolet ((add-if-exist (val lst sym)
+		   `(when ,val
+		      (push (cons ,sym (apply #'rgb-to-hex
+					      (color-name-to-rgb ,val)))
+			    ,lst))))
+      (if org-msg-export-in-progress
+	  (let ((face (org-get-todo-face todo)))
+	    (when (and todo face)
+	      (let (props)
+		(add-if-exist (htmlize-face-foreground face) props 'color)
+		(add-if-exist (htmlize-face-background face) props
+			      'background-color)
+		(format "<span%s>%s</span>"
+			(if props
+			    (format " style=\"%s\""
+				    (org-msg-props-to-style props))
+			  "")
+			todo))))
+	(if info
+	    (funcall orig-fun todo info)
+	  (funcall orig-fun todo))))))
 
 (defun org-msg-get-to-first-name ()
   "Return the first name of the recipient.
