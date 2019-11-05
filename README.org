@@ -33,6 +33,12 @@ To start composing a new *OrgMsg* email, you can call the interactive ~message-m
 
 *OrgMsg* depends on this module: [[https://github.com/hniksic/emacs-htmlize][emacs-htmlize]]
 
+The default Emacs Mail User Agent is [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][Message]], if you are a  [[https://www.djcbsoftware.nl/code/mu/mu4e/][mu4e]] user, you need to define your mail user agent (see [[https://www.djcbsoftware.nl/code/mu/mu4e/Emacs-default.html#Emacs-default][mu4e documentation - Emacs-default]]) because  *OrgMsg* places some hooks and runs specific functions depending on the current Mail User Agent. The proper Mail User Agent should be defined before you activate *OrgMsg* (call the ~org-msg-mode~ function). Here is how you can define the Mail User Agent [[https://www.djcbsoftware.nl/code/mu/mu4e/][mu4e]].
+
+#+begin_src emacs-lisp
+(setq mail-user-agent 'mu4e-user-agent)
+#+end_src
+
 The following is my configuration which you can use as an example.
 
 #+begin_src emacs-lisp
