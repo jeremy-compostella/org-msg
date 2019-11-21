@@ -344,8 +344,12 @@ file."
 	    (insert html))
 	  ;; Remove everything before html tag
 	  (save-excursion
-	    (when (re-search-forward "^<html\\(.*?\\)>" nil t)
-	      (delete-region (point-min) (match-beginning 0))))
+	    (if (re-search-forward "^<html\\(.*?\\)>" nil t)
+		(delete-region (point-min) (match-beginning 0))
+	      ;; Handle malformed HTML
+	      (insert "<html><body>")
+	      (goto-char (point-max))
+	      (insert "</body></html>")))
 	  ;; Insert reply header after body tag
 	  (when (re-search-forward "<body\\(.*?\\)>" nil t)
 	    (goto-char (match-end 0))
