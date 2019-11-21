@@ -1,6 +1,6 @@
 *OrgMsg* is a [[https://www.gnu.org/software/emacs/][GNU Emacs]] global minor mode mixing up [[https://orgmode.org/][Org mode]] and your Mail User Agent Mode ([[https://www.gnu.org/software/emacs/manual/html_mono/message.html][Message mode]] or [[https://www.djcbsoftware.nl/code/mu/mu4e/][mu4e mode]]) to compose and reply to emails in a Outlook HTML friendly style.
 
-[[https://melpa.org/#/org-msg][https://melpa.org/packages/org-msg-badge.svg]]
+[[https://melpa.org/#/org-msg][https://melpa.org/packages/org-msg-badge.svg]] [[https://img.shields.io/badge/License-GPLv3-blue.svg]]
 
 * Presentation
 
