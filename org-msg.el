@@ -341,7 +341,8 @@ file."
 			       value)))))
 	(with-temp-buffer
 	  (save-excursion
-	    (insert html))
+	    (insert html)
+	    (quoted-printable-decode-region (point-min) (point-max)))
 	  ;; Remove everything before html tag
 	  (save-excursion
 	    (if (re-search-forward "^<html\\(.*?\\)>" nil t)
