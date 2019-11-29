@@ -750,6 +750,13 @@ This function is used as an advice function of `org-html--todo'.
 	    (funcall orig-fun todo info)
 	  (funcall orig-fun todo))))))
 
+(defun org-msg-message-fetch-field (field-name)
+  "Return the value of the header field whose type is FIELD-NAME."
+  (save-excursion
+    (save-restriction
+      (message-narrow-to-headers)
+      (message-fetch-field field-name))))
+
 (defun org-msg-get-to-first-name ()
   "Return the first name of the recipient.
 It parses the 'To:' field of the current `org-msg-edit-mode'
@@ -767,14 +774,13 @@ automatically greet the right name, see `org-msg-greeting-fmt'."
 			 (format "[[mailto:%s][%s]]" mail first-name)
 		       first-name))))))
     (save-excursion
-      (let ((recipients (mail-extract-address-components
-			 (save-restriction
-			   (message-narrow-to-headers)
-			   (message-fetch-field "to"))
-			 t)))
-	(when org-msg-greeting-name-limit
-	  (setf recipients (seq-take recipients org-msg-greeting-name-limit)))
-	(mapconcat #'recipient2name recipients ", ")))))
+      (let ((to (org-msg-message-fetch-field "to")))
+	(if to
+	    (let ((recipients (mail-extract-address-components to t)))
+	      (when org-msg-greeting-name-limit
+		(setf recipients (seq-take recipients org-msg-greeting-name-limit)))
+	      (mapconcat #'recipient2name recipients ", "))
+	  "")))))
 
 (defun org-msg-header (reply-to)
   "Build the Org OPTIONS and PROPERTIES blocks.
@@ -805,8 +811,8 @@ If the current `message' buffer is a reply, the
 `org-msg-separator' string is inserted at the end of the editing
 area."
   (message-goto-body)
-  (let ((new (not (and (message-fetch-field "to")
-		       (message-fetch-field "subject"))))
+  (let ((new (not (and (org-msg-message-fetch-field "to")
+		       (org-msg-message-fetch-field "subject"))))
 	(with-original (not (= (point) (point-max))))
 	(reply-to))
     (when (or new (org-msg-mua-call 'article-htmlp))
