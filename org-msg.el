@@ -810,35 +810,36 @@ a html mime part, it returns t, nil otherwise."
 If the current `message' buffer is a reply, the
 `org-msg-separator' string is inserted at the end of the editing
 area."
-  (message-goto-body)
-  (let ((new (not (org-msg-message-fetch-field "subject")))
-	(with-original (not (= (point) (point-max))))
-	(reply-to))
-    (when (or new (org-msg-mua-call 'article-htmlp))
-      (unless new
-	(setq reply-to (org-msg-mua-call 'save-article-for-reply)))
-      (insert (org-msg-header reply-to))
-      (when org-msg-greeting-fmt
-	(insert (format org-msg-greeting-fmt
-			(if new
-			    ""
-			  (org-msg-get-to-first-name)))))
-      (save-excursion
-	(when with-original
-	  (save-excursion
-	    (insert "\n\n" org-msg-separator "\n")
-	    (delete-region (line-beginning-position)
-			   (1+ (line-end-position)))
+  (unless (eq major-mode 'org-msg-edit-mode)
+    (message-goto-body)
+    (let ((new (not (org-msg-message-fetch-field "subject")))
+	  (with-original (not (= (point) (point-max))))
+	  (reply-to))
+      (when (or new (org-msg-mua-call 'article-htmlp))
+	(unless new
+	  (setq reply-to (org-msg-mua-call 'save-article-for-reply)))
+	(insert (org-msg-header reply-to))
+	(when org-msg-greeting-fmt
+	  (insert (format org-msg-greeting-fmt
+			  (if new
+			      ""
+			    (org-msg-get-to-first-name)))))
+	(save-excursion
+	  (when with-original
 	    (save-excursion
-	      (while (re-search-forward "^>+ *" nil t)
-		(replace-match "")))
-	    (org-escape-code-in-region (point) (point-max))))
-	(when org-msg-signature
-	  (insert org-msg-signature))
-	(org-msg-edit-mode)))
-    (if (org-msg-message-fetch-field "to")
-	(org-msg-goto-body)
-      (message-goto-to))))
+	      (insert "\n\n" org-msg-separator "\n")
+	      (delete-region (line-beginning-position)
+			     (1+ (line-end-position)))
+	      (save-excursion
+		(while (re-search-forward "^>+ *" nil t)
+		  (replace-match "")))
+	      (org-escape-code-in-region (point) (point-max))))
+	  (when org-msg-signature
+	    (insert org-msg-signature))
+	  (org-msg-edit-mode)))
+      (if (org-msg-message-fetch-field "to")
+	  (org-msg-goto-body)
+	(message-goto-to)))))
 
 (defun org-msg-ctrl-c-ctrl-c ()
   "Send message like `message-send-and-exit'.
