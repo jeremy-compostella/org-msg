@@ -657,7 +657,8 @@ absolute paths."
 	(if (not original)
 	    (assq-delete-all 'script (assq 'head reply))
 	  (org-msg-improve-reply-header original css)
-	  (push (assq (if org-html-html5-fancy 'article 'div) (assq 'body reply))
+	  (push (or (assq 'article (assq 'body reply))
+		    (assq 'div (assq 'body reply)))
 		(cddr (assq 'body original))))
 	(or original reply)))))
 
