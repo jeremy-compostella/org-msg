@@ -811,8 +811,7 @@ If the current `message' buffer is a reply, the
 `org-msg-separator' string is inserted at the end of the editing
 area."
   (message-goto-body)
-  (let ((new (not (and (org-msg-message-fetch-field "to")
-		       (org-msg-message-fetch-field "subject"))))
+  (let ((new (not (org-msg-message-fetch-field "subject")))
 	(with-original (not (= (point) (point-max))))
 	(reply-to))
     (when (or new (org-msg-mua-call 'article-htmlp))
@@ -837,9 +836,9 @@ area."
 	(when org-msg-signature
 	  (insert org-msg-signature))
 	(org-msg-edit-mode)))
-    (if new
-	(message-goto-to)
-      (org-msg-goto-body))))
+    (if (org-msg-message-fetch-field "to")
+	(org-msg-goto-body)
+      (message-goto-to))))
 
 (defun org-msg-ctrl-c-ctrl-c ()
   "Send message like `message-send-and-exit'.
