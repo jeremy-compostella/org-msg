@@ -288,7 +288,8 @@ Example:
   "Default CSS class for reply header tags."
   :type '(symbol))
 
-(defcustom org-msg-supported-mua '((message-user-agent . "gnus")
+(defcustom org-msg-supported-mua '((gnus-user-agent . "gnus")
+				   (message-user-agent . "gnus")
 				   (mu4e-user-agent . "mu4e"))
   "Supported Mail User Agents."
   :type '(alist :value-type string))
