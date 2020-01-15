@@ -689,8 +689,8 @@ This function is a hook for `message-send-hook'."
 	  (unless (file-exists-p file)
 	    (error "File '%s' does not exist" file)))
 	(setq org-msg-attachment attachments)
-	(message-goto-body)
-	(delete-region (point) (point-max))
+	(goto-char (org-msg-start))
+	(delete-region (org-msg-start) (point-max))
 	(mml-insert-part "text/html")
 	(insert (org-msg-xml-to-str mail))))))
 
@@ -895,7 +895,8 @@ d       Delete one attachment, you will be prompted for a file name."))
   "Return the point of the beginning of the message body."
   (save-excursion
     (message-goto-body)
-    (point)))
+    (search-forward "#+OPTIONS:" nil t)
+    (line-beginning-position)))
 
 (defun org-msg-end ()
   "Return the point of the end of the message body."
