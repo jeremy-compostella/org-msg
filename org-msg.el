@@ -136,6 +136,9 @@
 (defvar org-msg-attachment '()
   "Temporary variable to pass the list of attachment.")
 
+(defvar org-msg-text-plain nil
+  "Temporary variable to pass the text/plain version of the email.")
+
 (defvar org-msg-export-in-progress nil
   "Internal use only.
 It is used by function advice.")
@@ -144,13 +147,16 @@ It is used by function advice.")
   "String separating the reply area and the original mail."
   :type '(string))
 
-(defcustom org-msg-options "html-postamble:nil toc:nil"
+(defcustom org-msg-options "html-postamble:nil toc:nil author:nil email:nil"
   "Org Mode #+OPTIONS."
   :type '(string))
 
 (defcustom org-msg-startup nil
   "Org Mode #+STARTUP."
   :type '(string))
+
+(defcustom org-msg-text-plain-alternative nil
+  "Include an ASCII export as a text/plain alternative.")
 
 (defcustom org-msg-greeting-fmt nil
   "Mail greeting format.
@@ -604,6 +610,15 @@ absolute paths."
 	    (kill-buffer)
 	    xml))))))
 
+(defun org-msg-org-to-text-plain ()
+  "Transform the current Org-Msg buffer into a text plain form."
+  (save-window-excursion
+    (let ((str (buffer-substring-no-properties (org-msg-start) (org-msg-end))))
+      (with-temp-buffer
+	(insert str)
+	(with-current-buffer (org-ascii-export-as-ascii)
+	  (buffer-string))))))
+
 (defun org-msg-load-css ()
   "Load the CSS definition according to `org-msg-enforce-css'."
   (cond ((listp org-msg-enforce-css) org-msg-enforce-css)
@@ -690,6 +705,8 @@ This function is a hook for `message-send-hook'."
 	  (unless (file-exists-p file)
 	    (error "File '%s' does not exist" file)))
 	(setq org-msg-attachment attachments)
+	(when org-msg-text-plain-alternative
+	  (setq org-msg-text-plain (org-msg-org-to-text-plain)))
 	(goto-char (org-msg-start))
 	(delete-region (org-msg-start) (point-max))
 	(mml-insert-part "text/html")
@@ -718,9 +735,16 @@ variable set by `org-msg-prepare-to-send'."
 	(push (list 'part `(type . ,type) `(filename . ,file)
 		    '(disposition . "attachment"))
 	      newparts)))
-      (nconc (list 'multipart (cons 'type "mixed"))
-      	     (if (eq (car cont) 'multipart) (list cont) cont)
-      	     newparts)))
+    (let ((alternative (if (eq (car cont) 'multipart) (list cont) cont)))
+      (when org-msg-text-plain-alternative
+	(setf alternative (push `(part (type . "text/plain")
+				       (disposition . "inline")
+				       (contents . ,org-msg-text-plain))
+				alternative)))
+      (append `(multipart (type . "mixed")
+			  (multipart (type . "alternative")
+				     ,@alternative))
+	      newparts))))
 
 (defun org-msg-html--todo (orig-fun todo &optional info)
   "Format todo keywords into HTML.

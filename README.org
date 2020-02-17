@@ -47,6 +47,7 @@ The following is my configuration which you can use as an example.
 	org-msg-startup "hidestars indent inlineimages"
 	org-msg-greeting-fmt "\nHi *%s*,\n\n"
 	org-msg-greeting-name-limit 3
+	org-msg-text-plain-alternative t
 	org-msg-signature "
 
   Regards,
@@ -59,5 +60,7 @@ The following is my configuration which you can use as an example.
 #+end_src
 
 The ~org-msg-greeting-fmt~ can be customized to configure the default greeting message.  If this format contains a ~%s~ token it is automatically replaced with the first name of the person you are replying to.  If ~org-msg-greeting-fmt-mailto~ is t, the first name it is formatted as mailto link.
+
+If ~org-msg-text-plain-alternative~ is ~t~, *OrgMsg* generates an ASCII export of the message and attach this export as a ~text/plain~ alternative to the HTML email.
 
 In order to avoid CSS conflict, *OrgMsg* performs inline replacement when it generates the final HTML message.  See the ~org-msg-enforce-css~ variable to customize the style (and the default ~org-msg-default-style~ variable for reference).
