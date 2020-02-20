@@ -211,6 +211,7 @@ Example:
     (div reply-header ((padding . "3.0pt 0in 0in 0in")
 		       (border-top . "solid #e1e1e1 1.0pt")
 		       (margin-bottom . "20px")))
+    (span underline ((text-decoration . "underline")))
     (li nil (,@font ,line-height (margin-bottom . "0px")
 	     (margin-top . "2px")))
     (nil org-ul ((list-style-type . "square")))
