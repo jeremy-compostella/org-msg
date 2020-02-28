@@ -144,7 +144,7 @@ It is used by function advice.")
   "String separating the reply area and the original mail."
   :type '(string))
 
-(defcustom org-msg-options "html-postamble:nil toc:nil"
+(defcustom org-msg-options "html-postamble:nil toc:nil latex:dvipng"
   "Org Mode #+OPTIONS."
   :type '(string))
 
