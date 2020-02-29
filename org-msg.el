@@ -569,12 +569,16 @@ absolute paths."
 		 (unless (url-type (url-generic-parse-url (cdr src)))
 		   (when src
 		     (unless (file-name-absolute-p (cdr src))
-		       (let ((file (concat base (cdr src))))
+		       (let ((file (concat base (cdr src)))
+                     (ltxfile (concat "/tmp/" (cdr src))))
 			 (if (file-exists-p file)
-			     (setcdr src (concat base (cdr src)))
-			   (unless (y-or-n-p (format "'%s' Image is missing,\
- do you want to continue ?" file))
-			     (error "'%s' Image is missing" file)))))))))))
+			     (setcdr src file)
+                 (if (file-exists-p ltxfile)
+			         (setcdr src ltxfile)
+                     (unless (y-or-n-p (format "'%s' Image is missing,\
+ do you want to continue ? alt : '%s'" file ltxfile))
+			         (error "'%s' Image is missing" file)))
+			  )))))))))
     (let ((xml (libxml-parse-html-region (point-min) (point-max))))
       (when base
 	(org-msg-xml-walk xml #'make-img-abs))
