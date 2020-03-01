@@ -569,23 +569,29 @@ is the XML tree and CSS the style."
   "Return the XML tree of the current HTML buffer.
 BASE is the path used to convert the IMG SRC relative paths to
 absolute paths."
-  (cl-flet ((make-img-abs (xml)
-	     (when (eq (car xml) 'img)
-	       (let ((src (assq 'src (cadr xml))))
-		 (unless (url-type (url-generic-parse-url (cdr src)))
-		   (when src
-		     (unless (file-name-absolute-p (cdr src))
-		       (let ((file (concat base (cdr src))))
-			 (if (file-exists-p file)
-			     (setcdr src (concat base (cdr src)))
-			   (unless (y-or-n-p (format "'%s' Image is missing,\
+  (let ((dirs (list base (temporary-file-directory))))
+    (cl-flet* ((img-file-path (file)
+		(let ((paths (mapcar* 'concat dirs
+				      (make-list (length dirs) file))))
+		  (car (delete-if-not 'file-exists-p paths))))
+	       (make-img-abs (xml)
+		(when (eq (car xml) 'img)
+		  (let ((src (assq 'src (cadr xml))))
+		    (unless (url-type (url-generic-parse-url (cdr src)))
+		      (when src
+			(unless (file-name-absolute-p (cdr src))
+			  (let* ((file (cdr src))
+				 (path (img-file-path file)))
+			    (if path
+				(setcdr src path)
+			      (unless (y-or-n-p (format "'%s' Image is missing,\
  do you want to continue ?" file))
-			     (error "'%s' Image is missing" file)))))))))))
-    (let ((xml (libxml-parse-html-region (point-min) (point-max))))
-      (when base
-	(org-msg-xml-walk xml #'make-img-abs))
-      (assq-delete-all 'title (assq 'head xml))
-      xml)))
+				(error "'%s' Image is missing" file)))))))))))
+      (let ((xml (libxml-parse-html-region (point-min) (point-max))))
+	(when base
+	  (org-msg-xml-walk xml #'make-img-abs))
+	(assq-delete-all 'title (assq 'head xml))
+	xml))))
 
 (defun org-msg-load-html-file (file)
   "Return the XML tree of a HTML FILE."
