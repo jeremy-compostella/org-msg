@@ -568,9 +568,10 @@ is the XML tree and CSS the style."
 (defun org-msg-html-buffer-to-xml (&optional base)
   "Return the XML tree of the current HTML buffer.
 BASE is the path used to convert the IMG SRC relative paths to
-absolute paths."
+absolute paths.  Base is also used to locate SVG objects tag file
+and include the SVG content into the email XML tree."
   (let ((dirs (list base (temporary-file-directory))))
-    (cl-flet* ((img-file-path (file)
+    (cl-flet* ((get-file-path (file)
 		(let ((paths (mapcar* 'concat dirs
 				      (make-list (length dirs) file))))
 		  (car (delete-if-not 'file-exists-p paths))))
@@ -581,15 +582,29 @@ absolute paths."
 		      (when src
 			(unless (file-name-absolute-p (cdr src))
 			  (let* ((file (cdr src))
-				 (path (img-file-path file)))
+				 (path (get-file-path file)))
 			    (if path
 				(setcdr src path)
 			      (unless (y-or-n-p (format "'%s' Image is missing,\
  do you want to continue ?" file))
-				(error "'%s' Image is missing" file)))))))))))
+				(error "'%s' Image is missing" file))))))))))
+	       (inline-svg (xml)
+		(when (and (eq (car xml) 'object)
+			   (string= (cdr (assq 'type (cadr xml)))
+				    "image/svg+xml"))
+		  (let ((file (get-file-path (assoc-default 'data (cadr xml)))))
+		    (when file
+		      (let ((svg (with-temp-buffer
+				   (insert-file file)
+				   (when (search-forward "<svg " nil t)
+				     (libxml-parse-xml-region (match-beginning 0)
+							      (point-max))))))
+			(setcar xml (car svg))
+			(setcdr xml (cdr svg))))))))
       (let ((xml (libxml-parse-html-region (point-min) (point-max))))
 	(when base
-	  (org-msg-xml-walk xml #'make-img-abs))
+	  (org-msg-xml-walk xml #'make-img-abs)
+	  (org-msg-xml-walk xml #'inline-svg))
 	(assq-delete-all 'title (assq 'head xml))
 	xml))))
 
