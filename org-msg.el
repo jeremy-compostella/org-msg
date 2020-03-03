@@ -877,9 +877,10 @@ area."
 	      (insert "\n\n" org-msg-separator "\n")
 	      (delete-region (line-beginning-position)
 			     (1+ (line-end-position)))
-	      (save-excursion
-		(while (re-search-forward "^>+ *" nil t)
-		  (replace-match "")))
+	      (dolist (rep '(("^>+ *" . "") ("___+" . "---")))
+		(save-excursion
+		  (while (re-search-forward (car rep) nil t)
+		    (replace-match (cdr rep)))))
 	      (org-escape-code-in-region (point) (point-max))))
 	  (when org-msg-signature
 	    (insert org-msg-signature))
