@@ -64,3 +64,5 @@ The ~org-msg-greeting-fmt~ can be customized to configure the default greeting m
 If ~org-msg-text-plain-alternative~ is ~t~, *OrgMsg* generates an ASCII export of the message and attach this export as a ~text/plain~ alternative to the HTML email.
 
 In order to avoid CSS conflict, *OrgMsg* performs inline replacement when it generates the final HTML message.  See the ~org-msg-enforce-css~ variable to customize the style (and the default ~org-msg-default-style~ variable for reference).
+
+Setting the org export option ~tex:dvipng~ or ~tex:dvisvgm~ is handeled correctly by this mode by producing inline images or inlining the generated SVG. Note that most mailclients however sadly do not display SVG content in mails so it might be best to stick to settings producing images unless you know your recipient's mailclient supports SVG.
