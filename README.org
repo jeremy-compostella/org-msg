@@ -43,7 +43,7 @@ The following is my configuration which you can use as an example.
 
 #+begin_src emacs-lisp
   (require 'org-msg)
-  (setq org-msg-options "html-postamble:nil H:5 num:nil ^:{} toc:nil"
+  (setq org-msg-options "html-postamble:nil H:5 num:nil ^:{} toc:nil author:nil email:nil \\n:t"
 	org-msg-startup "hidestars indent inlineimages"
 	org-msg-greeting-fmt "\nHi *%s*,\n\n"
 	org-msg-greeting-name-limit 3
