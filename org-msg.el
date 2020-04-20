@@ -1075,9 +1075,30 @@ HTML emails."
   "Setup mu4e faces, addresses completion and run mu4e."
   (mu4e~compose-remap-faces)
   (mu4e~start)
-  (mu4e~compose-setup-fcc-maybe)
   (when mu4e-compose-complete-addresses
-    (mu4e~compose-setup-completion)))
+    (mu4e~compose-setup-completion))
+
+  ;; the following code is verbatim from mu4e-compse.el, mu4e-compose-mode
+  ;; this will setup fcc (saving sent messages) and handle flags
+  ;; (e.g. replied to)
+  ;; resolves issue #25
+  (add-hook 'message-send-hook
+            (lambda () ;; mu4e~compose-save-before-sending
+              ;; when in-reply-to was removed, remove references as well.
+              (when (eq mu4e-compose-type 'reply)
+                (mu4e~remove-refs-maybe))
+              (when use-hard-newlines
+                (mu4e-send-harden-newlines))
+              ;; for safety, always save the draft before sending
+              (set-buffer-modified-p t)
+              (save-buffer)
+              (mu4e~compose-setup-fcc-maybe)
+              (widen)) nil t)
+  ;; when the message has been sent.
+  (add-hook 'message-sent-hook
+            (lambda () ;;  mu4e~compose-mark-after-sending
+              (setq mu4e-sent-func 'mu4e-sent-handler)
+              (mu4e~proc-sent (buffer-file-name))) nil t))
 
 (defvar org-msg-edit-mode-map
   (let ((map (make-sparse-keymap)))
