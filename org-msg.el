@@ -1096,14 +1096,22 @@ HTML emails."
   (add-hook 'message-sent-hook
             (lambda () ;;  mu4e~compose-mark-after-sending
               (setq mu4e-sent-func 'mu4e-sent-handler)
-              (mu4e~proc-sent (buffer-file-name))) nil t))
+              (mu4e~proc-sent (buffer-file-name))) nil t)
+  (define-key org-msg-edit-mode-map (kbd "C-c C-k") 'mu4e-message-kill-buffer))
+
+(defalias 'org-msg-edit-kill-buffer-gnus 'message-kill-buffer)
+(defalias 'org-msg-edit-kill-buffer-mu4e 'mu4e-message-kill-buffer)
+
+(defun org-msg-edit-kill-buffer ()
+  (interactive)
+  (org-msg-mua-call 'edit-kill-buffer))
 
 (defvar org-msg-edit-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map org-mode-map)
     (define-key map (kbd "<tab>") 'org-msg-tab)
     (define-key map [remap org-export-dispatch] 'org-msg-preview)
-    (define-key map (kbd "C-c C-k") 'message-kill-buffer)
+    (define-key map (kbd "C-c C-k") 'org-msg-edit-kill-buffer)
     (define-key map (kbd "C-c C-s") 'message-goto-subject)
     (define-key map (kbd "C-c C-b") 'org-msg-goto-body)
     (define-key map [remap org-attach] 'org-msg-attach)
