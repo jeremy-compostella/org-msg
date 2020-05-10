@@ -335,47 +335,46 @@ file."
 
 (defun org-msg-save-article-for-reply-mu4e ()
   "Export the currently visited mu4e article as HTML."
-  (with-current-buffer mu4e~view-buffer-name
-    (let* ((msg (mu4e-message-at-point))
-	   (html (mu4e-message-field msg :body-html))
-	   (file (concat "/tmp/" (mu4e-message-field msg :message-id))))
-      (cl-flet* ((mails2str (l)
-		   (mapconcat (lambda (m)
-				(format "%S &lt;%s&gt;" (car m) (cdr m)))
-			      l ", "))
-		 (field2str (f)
-		   (let ((value (funcall (cdr f)
-					 (mu4e-message-field msg (car f)))))
-		     (when value
-		       (format "%s: %s<br>\n"
-			       (capitalize (substring (symbol-name (car f)) 1))
-			       value)))))
-	(with-temp-buffer
-	  (save-excursion
-	    (insert html)
-	    (quoted-printable-decode-region (point-min) (point-max)))
-	  ;; Remove everything before html tag
-	  (save-excursion
-	    (if (re-search-forward "^<html\\(.*?\\)>" nil t)
-		(delete-region (point-min) (match-beginning 0))
-	      ;; Handle malformed HTML
-	      (insert "<html><body>")
-	      (goto-char (point-max))
-	      (insert "</body></html>")))
-	  ;; Insert reply header after body tag
-	  (when (re-search-forward "<body\\(.*?\\)>" nil t)
-	    (goto-char (match-end 0))
-	    (insert "<div align=\"left\">\n"
-		    (mapconcat #'field2str
-			       `((:from . ,#'mails2str)
-				 (:subject . identity)
-				 (:to . ,#'mails2str)
-				 (:cc . ,#'mails2str)
-				 (:date . message-make-date))
-			       "")
-		    "</div>\n<hr>\n"))
-	  (write-file file))
-	(list file)))))
+  (let* ((msg mu4e-compose-parent-message)
+	 (html (mu4e-message-field msg :body-html))
+	 (file (concat "/tmp/" (mu4e-message-field msg :message-id))))
+    (cl-flet* ((mails2str (l)
+		 (mapconcat (lambda (m)
+			      (format "%S &lt;%s&gt;" (car m) (cdr m)))
+			    l ", "))
+	       (field2str (f)
+		 (let ((value (funcall (cdr f)
+				       (mu4e-message-field msg (car f)))))
+		   (when value
+		     (format "%s: %s<br>\n"
+			     (capitalize (substring (symbol-name (car f)) 1))
+			     value)))))
+      (with-temp-buffer
+	(save-excursion
+	  (insert html)
+	  (quoted-printable-decode-region (point-min) (point-max)))
+	;; Remove everything before html tag
+	(save-excursion
+	  (if (re-search-forward "^<html\\(.*?\\)>" nil t)
+	      (delete-region (point-min) (match-beginning 0))
+	    ;; Handle malformed HTML
+	    (insert "<html><body>")
+	    (goto-char (point-max))
+	    (insert "</body></html>")))
+	;; Insert reply header after body tag
+	(when (re-search-forward "<body\\(.*?\\)>" nil t)
+	  (goto-char (match-end 0))
+	  (insert "<div align=\"left\">\n"
+		  (mapconcat #'field2str
+			     `((:from . ,#'mails2str)
+			       (:subject . identity)
+			       (:to . ,#'mails2str)
+			       (:cc . ,#'mails2str)
+			       (:date . message-make-date))
+			     "")
+		  "</div>\n<hr>\n"))
+	(write-file file))
+      (list file))))
 
 (defun org-msg-attrs-str (attr)
   "Convert ATTR list of attributes into a string."
@@ -863,8 +862,7 @@ a html mime part, it returns t, nil otherwise."
 
 (defun org-msg-article-htmlp-mu4e ()
   "Return t if the current mu4e article is HTML article."
-  (with-current-buffer mu4e~view-buffer-name
-    (when (mu4e-message-field-at-point :body-html) t)))
+  (when (mu4e-message-field mu4e-compose-parent-message :body-html) t))
 
 (defun org-msg-post-setup (&rest _args)
   "Transform the current `message' buffer into a OrgMsg buffer.
