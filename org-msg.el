@@ -895,7 +895,8 @@ area."
 	      (org-escape-code-in-region (point) (point-max))))
 	  (when org-msg-signature
 	    (insert org-msg-signature))
-	  (org-msg-edit-mode)))
+	  (org-msg-edit-mode))
+	(set-buffer-modified-p nil))
       (if (org-msg-message-fetch-field "to")
 	  (org-msg-goto-body)
 	(message-goto-to)))))
