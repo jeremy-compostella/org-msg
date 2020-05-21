@@ -48,7 +48,7 @@
 ;; the original content.
 
 ;; OrgMsg has a mechanism to support different Mail User Agents
-;; (message, mu4e, ...).  Each function which depends on the Mail User
+;; (message, mu4e, notmuch ...).  Each function which depends on the Mail User
 ;; Agent calls the `org-msg-mua-call' which is an indirection to the
 ;; OrgMsg Mail User Agent specific function.
 
@@ -297,7 +297,8 @@ Example:
 
 (defcustom org-msg-supported-mua '((gnus-user-agent . "gnus")
 				   (message-user-agent . "gnus")
-				   (mu4e-user-agent . "mu4e"))
+				   (mu4e-user-agent . "mu4e")
+				   (notmuch-user-agent . "notmuch"))
   "Supported Mail User Agents."
   :type '(alist :value-type string))
 
@@ -863,6 +864,11 @@ a html mime part, it returns t, nil otherwise."
   "Return t if the current mu4e article is HTML article."
   (when (mu4e-message-field mu4e-compose-parent-message :body-html) t))
 
+(defun org-msg-article-htmlp-notmuch ()
+  "Return t if the current notmuch reply is an HTML article."
+  ;; Seems like never the case for notmuch but we want to use org-msg
+  t)
+
 (defun org-msg-post-setup (&rest _args)
   "Transform the current `message' buffer into a OrgMsg buffer.
 If the current `message' buffer is a reply, the
@@ -900,6 +906,11 @@ area."
       (if (org-msg-message-fetch-field "to")
 	  (org-msg-goto-body)
 	(message-goto-to)))))
+
+(defun org-msg-post-setup--if-not-reply (&rest _args)
+  "Helper for new mail setup vs reply in notmuch"
+  (unless (org-msg-message-fetch-field "subject")
+    (org-msg-post-setup _args)))
 
 (defun org-msg-ctrl-c-ctrl-c ()
   "Send message like `message-send-and-exit'.
@@ -1005,6 +1016,16 @@ d       Delete one attachment, you will be prompted for a file name."))
   (if org-msg-mode
       (add-hook 'mu4e-compose-mode-hook 'org-msg-post-setup)
     (remove-hook 'mu4e-compose-mode-hook 'org-msg-post-setup)))
+
+(defun org-msg-mode-notmuch ()
+  "Setup the hook for notmuch mail user agent."
+  (if org-msg-mode
+      (progn
+        (advice-add 'notmuch-mua-reply :after 'org-msg-post-setup)
+        (advice-add 'notmuch-mua-mail :after 'org-msg-post-setup--if-not-reply))
+    (progn
+      (advice-remove 'notmuch-mua-reply 'org-msg-post-setup)
+      (advice-remove 'notmuch-mua-mail 'org-msg-post-setup--if-not-reply))))
 
 (define-minor-mode org-msg-mode
   "Toggle OrgMsg mode.
