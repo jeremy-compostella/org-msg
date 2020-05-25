@@ -1119,6 +1119,7 @@ HTML emails."
   (define-key org-msg-edit-mode-map (kbd "C-c C-k") 'mu4e-message-kill-buffer))
 
 (defalias 'org-msg-edit-kill-buffer-gnus 'message-kill-buffer)
+(defalias 'org-msg-edit-kill-buffer-notmuch 'message-kill-buffer)
 (defalias 'org-msg-edit-kill-buffer-mu4e 'mu4e-message-kill-buffer)
 
 (defun org-msg-edit-kill-buffer ()
