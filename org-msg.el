@@ -444,7 +444,7 @@ during email generation where '&apos;' is turned into
 			    (if (stringp class) (intern class) nil)
 			    props)
 		      l)))))))
-	l))
+    l))
 
 (defun org-msg-css-file-to-list (file)
   "Convert FILE CSS content into a list representation.
