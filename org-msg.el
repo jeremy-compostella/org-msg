@@ -916,8 +916,8 @@ area."
   "Send message like `message-send-and-exit'.
 If the current buffer is OrgMsg buffer and OrgMsg is enabled (see
 `org-msg-toggle'), it calls `message-send-and-exit'."
-  (when (eq major-mode 'org-msg-edit-mode))
-    (message-send-and-exit))
+  (when (eq major-mode 'org-msg-edit-mode)
+    (message-send-and-exit)))
 
 (defun org-msg-tab ()
   "Complete names or Org mode visibility cycle.
