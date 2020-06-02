@@ -1027,6 +1027,7 @@ d       Delete one attachment, you will be prompted for a file name."))
       (advice-remove 'notmuch-mua-reply 'org-msg-post-setup)
       (advice-remove 'notmuch-mua-mail 'org-msg-post-setup--if-not-reply))))
 
+;;;###autoload
 (define-minor-mode org-msg-mode
   "Toggle OrgMsg mode.
 With a prefix argument ARG, enable Delete Selection mode if ARG
