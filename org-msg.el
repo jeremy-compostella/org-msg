@@ -325,7 +325,7 @@ actual email we want to reply to.  The
 images.  This function returns the absolute path of the HTML
 file."
   (let* ((browse-url-browser-function #'ignore)
-	 (save (copy-list gnus-article-browse-html-temp-list)))
+	 (save (cl-copy-list gnus-article-browse-html-temp-list)))
     (cl-letf (((symbol-function 'gnus-summary-show-article) #'ignore))
       (save-window-excursion
 	(gnus-article-browse-html-article)))
@@ -574,9 +574,9 @@ absolute paths.  Base is also used to locate SVG objects tag file
 and include the SVG content into the email XML tree."
   (let ((dirs (list base (temporary-file-directory))))
     (cl-flet* ((get-file-path (file)
-		(let ((paths (mapcar* 'concat dirs
-				      (make-list (length dirs) file))))
-		  (car (delete-if-not 'file-exists-p paths))))
+		(let ((paths (cl-mapcar 'concat dirs
+					(make-list (length dirs) file))))
+		  (car (cl-delete-if-not 'file-exists-p paths))))
 	       (make-img-abs (xml)
 		(when (eq (car xml) 'img)
 		  (let ((src (assq 'src (cadr xml))))
