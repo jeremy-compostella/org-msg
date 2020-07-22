@@ -877,7 +877,6 @@ area."
   (unless (eq major-mode 'org-msg-edit-mode)
     (message-goto-body)
     (let ((new (not (org-msg-message-fetch-field "subject")))
-	  (with-original (not (= (point) (point-max))))
 	  (reply-to))
       (when (or new (org-msg-mua-call 'article-htmlp))
 	(unless new
@@ -889,7 +888,7 @@ area."
 			      ""
 			    (org-msg-get-to-first-name)))))
 	(save-excursion
-	  (when with-original
+	  (unless new
 	    (save-excursion
 	      (insert "\n\n" org-msg-separator "\n")
 	      (delete-region (line-beginning-position)
