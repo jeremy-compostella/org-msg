@@ -1017,15 +1017,21 @@ d       Delete one attachment, you will be prompted for a file name."))
       (add-hook 'mu4e-compose-mode-hook 'org-msg-post-setup)
     (remove-hook 'mu4e-compose-mode-hook 'org-msg-post-setup)))
 
+(defun org-msg-notmuch-message-send-and-exit (orig-fun &rest args)
+  (letf (((symbol-function 'message-do-fcc) #'notmuch-maildir-message-do-fcc))
+    (apply orig-fun args)))
+
 (defun org-msg-mode-notmuch ()
   "Setup the hook for notmuch mail user agent."
   (if org-msg-mode
       (progn
         (advice-add 'notmuch-mua-reply :after 'org-msg-post-setup)
-        (advice-add 'notmuch-mua-mail :after 'org-msg-post-setup--if-not-reply))
+        (advice-add 'notmuch-mua-mail :after 'org-msg-post-setup--if-not-reply)
+        (advice-add 'message-send-and-exit :around 'org-msg-notmuch-message-send-and-exit))
     (progn
       (advice-remove 'notmuch-mua-reply 'org-msg-post-setup)
-      (advice-remove 'notmuch-mua-mail 'org-msg-post-setup--if-not-reply))))
+      (advice-remove 'notmuch-mua-mail 'org-msg-post-setup--if-not-reply)
+      (advice-remove 'message-send-and-exit 'org-msg-notmuch-message-send-and-exit))))
 
 ;;;###autoload
 (define-minor-mode org-msg-mode
