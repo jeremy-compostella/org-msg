@@ -1018,7 +1018,8 @@ d       Delete one attachment, you will be prompted for a file name."))
     (remove-hook 'mu4e-compose-mode-hook 'org-msg-post-setup)))
 
 (defun org-msg-notmuch-message-send-and-exit (orig-fun &rest args)
-  (letf (((symbol-function 'message-do-fcc) #'notmuch-maildir-message-do-fcc))
+  (letf (((symbol-function 'message-do-fcc) #'notmuch-maildir-message-do-fcc)
+         (inhibit-read-only t))
     (apply orig-fun args)))
 
 (defun org-msg-mode-notmuch ()
