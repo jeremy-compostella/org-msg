@@ -1040,8 +1040,7 @@ HTML emails."
   (org-msg-mua-call 'mode)
   (if org-msg-mode
       (progn
-	(add-hook 'message-send-hook 'org-msg-prepare-to-send)
-	(add-hook 'message-sent-hook 'undo)
+	(put 'message-sent-hook 'permanent-local t)
 	(add-hook 'org-ctrl-c-ctrl-c-final-hook 'org-msg-ctrl-c-ctrl-c)
 	(add-to-list 'message-syntax-checks '(invisible-text . disabled))
 	(unless (org-msg-mml-recursive-support)
@@ -1051,8 +1050,7 @@ HTML emails."
 	(advice-add 'message-mail :after #'org-msg-post-setup)
 	(when (boundp 'bbdb-mua-mode-alist)
 	  (add-to-list 'bbdb-mua-mode-alist '(message org-msg-edit-mode))))
-    (remove-hook 'message-send-hook 'org-msg-prepare-to-send)
-    (remove-hook 'message-sent-hook 'undo)
+    (put 'message-sent-hook 'permanent-local nil)
     (remove-hook 'org-ctrl-c-ctrl-c-final-hook 'org-msg-ctrl-c-ctrl-c)
     (setq message-syntax-checks (delete '(invisible-text . disabled)
 					message-syntax-checks))
@@ -1156,6 +1154,8 @@ Type \\[org-msg-attach] to call the dispatcher for attachment
 
 \\{org-msg-edit-mode-map}"
   (set (make-local-variable 'message-sent-message-via) nil)
+  (add-hook 'message-send-hook 'org-msg-prepare-to-send nil t)
+  (add-hook 'message-sent-hook 'undo t t)
   (add-hook 'completion-at-point-functions 'message-completion-function nil t)
   (setq org-font-lock-keywords
 	(append org-font-lock-keywords message-font-lock-keywords
