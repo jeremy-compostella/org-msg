@@ -914,12 +914,16 @@ area."
   (unless (org-msg-message-fetch-field "subject")
     (org-msg-post-setup _args)))
 
+(defalias 'org-msg-send-and-exit-gnus 'message-send-and-exit)
+(defalias 'org-msg-send-and-exit-mu4e 'message-send-and-exit)
+(defalias 'org-msg-send-and-exit-notmuch 'notmuch-mua-send-and-exit)
+
 (defun org-msg-ctrl-c-ctrl-c ()
   "Send message like `message-send-and-exit'.
 If the current buffer is OrgMsg buffer and OrgMsg is enabled (see
 `org-msg-toggle'), it calls `message-send-and-exit'."
   (when (eq major-mode 'org-msg-edit-mode)
-    (message-send-and-exit)))
+    (org-msg-mua-call 'send-and-exit)))
 
 (defun org-msg-tab ()
   "Complete names or Org mode visibility cycle.
