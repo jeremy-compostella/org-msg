@@ -278,7 +278,7 @@ Example:
 	     ,font-family))
     (p nil ((text-decoration . "none") (margin-bottom . "0px")
 	    (margin-top . "10px") (line-height . "11pt") ,font-size
-	    ,font-family (max-width . "100ch")))
+	    ,font-family))
     (div nil (,@font (line-height . "11pt"))))))
 
 (defcustom org-msg-enforce-css org-msg-default-style
