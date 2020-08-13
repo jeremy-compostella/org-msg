@@ -302,13 +302,17 @@ Example:
   "Supported Mail User Agents."
   :type '(alist :value-type string))
 
-(defun org-msg-mua-call (sym &rest arg)
-  "Call the specific MUA function for SYM with ARG parameters."
+(defun org-msg-mua-call (sym &optional default &rest arg)
+  "Call the specific MUA function for SYM with ARG parameters.
+If no function is defined for this MUA, the DEFAULT function
+is called."
   (let ((mua (assoc-default mail-user-agent org-msg-supported-mua)))
     (if mua
 	(let ((fun (intern (format "org-msg-%s-%s" sym mua))))
-	  (when (functionp fun)
-	    (apply fun arg)))
+	  (if (functionp fun)
+	      (apply fun arg)
+	    (when default
+	      (apply default arg))))
       (error "Backend not found"))))
 
 (defun org-msg-mml-recursive-support ()
@@ -914,8 +918,6 @@ area."
   (unless (org-msg-message-fetch-field "subject")
     (org-msg-post-setup _args)))
 
-(defalias 'org-msg-send-and-exit-gnus 'message-send-and-exit)
-(defalias 'org-msg-send-and-exit-mu4e 'message-send-and-exit)
 (defalias 'org-msg-send-and-exit-notmuch 'notmuch-mua-send-and-exit)
 
 (defun org-msg-ctrl-c-ctrl-c ()
@@ -923,7 +925,7 @@ area."
 If the current buffer is OrgMsg buffer and OrgMsg is enabled (see
 `org-msg-toggle'), it calls `message-send-and-exit'."
   (when (eq major-mode 'org-msg-edit-mode)
-    (org-msg-mua-call 'send-and-exit)))
+    (org-msg-mua-call 'send-and-exit 'message-send-and-exit)))
 
 (defun org-msg-tab ()
   "Complete names or Org mode visibility cycle.
@@ -1123,13 +1125,11 @@ HTML emails."
               (mu4e~proc-sent (buffer-file-name))) nil t)
   (define-key org-msg-edit-mode-map (kbd "C-c C-k") 'mu4e-message-kill-buffer))
 
-(defalias 'org-msg-edit-kill-buffer-gnus 'message-kill-buffer)
-(defalias 'org-msg-edit-kill-buffer-notmuch 'message-kill-buffer)
 (defalias 'org-msg-edit-kill-buffer-mu4e 'mu4e-message-kill-buffer)
 
 (defun org-msg-edit-kill-buffer ()
   (interactive)
-  (org-msg-mua-call 'edit-kill-buffer))
+  (org-msg-mua-call 'edit-kill-buffer 'message-kill-buffer))
 
 (defvar org-msg-edit-mode-map
   (let ((map (make-sparse-keymap)))
