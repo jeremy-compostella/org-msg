@@ -722,29 +722,32 @@ With the prefix argument ARG set, it calls
 This function is a hook for `message-send-hook'."
   (save-window-excursion
     (when (eq major-mode 'org-msg-edit-mode)
-      (let ((mail (org-msg-build))
-	    (attachments (org-msg-get-prop "attachment")))
-	(dolist (file attachments)
-	  (unless (file-exists-p file)
-	    (error "File '%s' does not exist" file)))
-	(setq org-msg-attachment attachments)
-	(when org-msg-text-plain-alternative
-	  (setq org-msg-text-plain (org-msg-org-to-text-plain)))
-	(goto-char (org-msg-start))
-	(delete-region (org-msg-start) (point-max))
-	(when (org-msg-mml-recursive-support)
-	  (when attachments
-	    (mml-insert-multipart "mixed")
-	    (dolist (file attachments)
-	      (mml-insert-tag 'part 'type (org-msg-file-mime-type file)
-			      'filename file 'disposition "attachment")))
+      (if (get-text-property (org-msg-start) 'mml)
+	  (message "Warning: org-msg: %S is already a MML buffer"
+		   (current-buffer))
+	(let ((mail (org-msg-build))
+	      (attachments (org-msg-get-prop "attachment")))
+	  (dolist (file attachments)
+	    (unless (file-exists-p file)
+	      (error "File '%s' does not exist" file)))
+	  (setq org-msg-attachment attachments)
 	  (when org-msg-text-plain-alternative
-	    (mml-insert-multipart "alternative")
-	    (mml-insert-part "text/plain")
-	    (insert org-msg-text-plain)
-	    (forward-line)))
-	(mml-insert-part "text/html")
-	(insert (org-msg-xml-to-str mail))))))
+	    (setq org-msg-text-plain (org-msg-org-to-text-plain)))
+	  (goto-char (org-msg-start))
+	  (delete-region (org-msg-start) (point-max))
+	  (when (org-msg-mml-recursive-support)
+	    (when attachments
+	      (mml-insert-multipart "mixed")
+	      (dolist (file attachments)
+		(mml-insert-tag 'part 'type (org-msg-file-mime-type file)
+				'filename file 'disposition "attachment")))
+	    (when org-msg-text-plain-alternative
+	      (mml-insert-multipart "alternative")
+	      (mml-insert-part "text/plain")
+	      (insert org-msg-text-plain)
+	      (forward-line)))
+	  (mml-insert-part "text/html")
+	  (insert (propertize (org-msg-xml-to-str mail) 'mml t)))))))
 
 (defun org-msg-file-mime-type (file)
   "Return FILE mime type based on FILE extension.
