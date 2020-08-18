@@ -1122,8 +1122,7 @@ HTML emails."
   (add-hook 'message-sent-hook
             (lambda () ;;  mu4e~compose-mark-after-sending
               (setq mu4e-sent-func 'mu4e-sent-handler)
-              (mu4e~proc-sent (buffer-file-name))) nil t)
-  (define-key org-msg-edit-mode-map (kbd "C-c C-k") 'mu4e-message-kill-buffer))
+              (mu4e~proc-sent (buffer-file-name))) nil t))
 
 (defalias 'org-msg-edit-kill-buffer-mu4e 'mu4e-message-kill-buffer)
 
