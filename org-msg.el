@@ -158,6 +158,9 @@ It is used by function advice.")
 (defcustom org-msg-text-plain-alternative nil
   "Include an ASCII export as a text/plain alternative.")
 
+(defcustom org-msg-text-plain-alternative-export-backend 'ascii
+  "The org-export backend to use to generate the text/plain alternative")
+
 (defcustom org-msg-greeting-fmt nil
   "Mail greeting format.
 If it contains a '%s' format, '%s' is replaced with the first
@@ -643,7 +646,9 @@ absolute paths."
     (let ((str (buffer-substring-no-properties (org-msg-start) (org-msg-end))))
       (with-temp-buffer
 	(insert str)
-	(with-current-buffer (org-ascii-export-as-ascii)
+	(with-current-buffer (org-export-to-buffer
+                                 org-msg-text-plain-alternative-export-backend
+                                 (generate-new-buffer-name "*org-msg text export*"))
 	  (buffer-string))))))
 
 (defun org-msg-load-css ()
