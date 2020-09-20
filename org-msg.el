@@ -136,8 +136,8 @@
 (defvar org-msg-attachment '()
   "Temporary variable to pass the list of attachment.")
 
-(defvar org-msg-text-plain nil
-  "Temporary variable to pass the text/plain version of the email.")
+(defvar org-msg-alternatives nil
+  "Temporary alist to hold the contents of each alternative.")
 
 (defvar org-msg-export-in-progress nil
   "Internal use only.
@@ -155,8 +155,19 @@ It is used by function advice.")
   "Org Mode #+STARTUP."
   :type '(string))
 
-(defcustom org-msg-text-plain-alternative nil
-  "Include an ASCII export as a text/plain alternative.")
+(defcustom org-msg-alternative-exporters
+  '((text . ("text/plain" . org-msg-export-as-text))
+    (html . ("text/html" . org-msg-export-as-html)))
+  "Alist of the available alternative exporters.
+Entries are in the form of `(tag . (mime-part . export-function))'.
+The export function takes an `org-msg' message buffer string and
+returns the exported content as a string."
+  :type '(list sexp))
+
+(defcustom org-msg-default-alternatives '(html)
+  "List of alternative MIME formats to send.
+Available exporters are present in `org-msg-alternative-exporters'"
+  :type '(list symbol))
 
 (defcustom org-msg-greeting-fmt nil
   "Mail greeting format.
@@ -637,14 +648,16 @@ absolute paths."
 	    (kill-buffer)
 	    xml))))))
 
-(defun org-msg-org-to-text-plain ()
-  "Transform the current Org-Msg buffer into a text plain form."
-  (save-window-excursion
-    (let ((str (buffer-substring-no-properties (org-msg-start) (org-msg-end))))
-      (with-temp-buffer
-	(insert str)
-	(with-current-buffer (org-ascii-export-as-ascii)
-	  (buffer-string))))))
+(defun org-msg-export-as-text (str)
+  "Transform the Org STR into a plain text."
+  (with-temp-buffer
+    (insert str)
+    (with-current-buffer (org-ascii-export-as-ascii)
+      (buffer-string))))
+
+(defun org-msg-export-as-html (str)
+  "Transform the Org STR into html."
+  (org-msg-xml-to-str (org-msg-build str)))
 
 (defun org-msg-load-css ()
   "Load the CSS definition according to `org-msg-enforce-css'."
@@ -670,8 +683,8 @@ absolute paths."
   (org-msg-with-match-prop prop
     (replace-match (format "%S" val) nil nil nil 3)))
 
-(defun org-msg-build ()
-  "Build and return the XML tree for current OrgMsg buffer."
+(defun org-msg-build (org)
+  "Build and return the XML tree for ORG string."
   (let ((css (org-msg-load-css)))
     (cl-flet ((enforce (xml)
 	       (let* ((tag (car xml))
@@ -687,8 +700,7 @@ absolute paths."
 			   (let ((src (assq 'src (cadr xml))))
 			     (when (string-prefix-p "file://" (cdr src))
 			       (setcdr src (substring (cdr src) (length "file://")))))))
-      (let* ((org (buffer-substring-no-properties (org-msg-start) (org-msg-end)))
-	     (reply (org-msg-org-to-xml org default-directory))
+      (let* ((reply (org-msg-org-to-xml org default-directory))
 	     (temp-files (org-msg-get-prop "reply-to"))
 	     (original (when temp-files
 			 (org-msg-load-html-file (car temp-files)))))
@@ -715,11 +727,29 @@ With the prefix argument ARG set, it calls
 					   'xwidget-webkit-browse-url
 					 browse-url-browser-function))
 	  (tmp-file (make-temp-file "org-msg" nil ".html"))
-	  (mail (org-msg-build)))
+	  (mail (org-msg-build (buffer-substring-no-properties
+                                (org-msg-start) (org-msg-end)))))
       (with-temp-buffer
 	(insert (org-msg-xml-to-str mail))
 	(write-file tmp-file))
       (browse-url (concat "file://" tmp-file)))))
+
+(defun org-msg-build-alternatives (alternatives)
+  "Build the contents of the current Org-msg buffer for each of the ALTERNATIVES."
+  ;; Verify that all exporters are actually available
+  (let ((available (map #'car org-msg-alternative-exporters)))
+    (dolist (alt alternatives)
+      (unless (member alt available)
+        (error "%s is not a valid alternative, must be one of %s"
+               missing
+               available))))
+  ;; Build the contents of each alternative
+  (let ((str (buffer-substring-no-properties (org-msg-start) (org-msg-end))))
+    (mapcar (lambda (alt)
+              (let ((exporter (cdr (assq alt org-msg-alternative-exporters))))
+                (cons (car exporter)
+                      (funcall (cdr exporter) str))))
+            alternatives)))
 
 (defun org-msg-prepare-to-send ()
   "Convert the current OrgMsg buffer into `mml' content.
@@ -729,29 +759,49 @@ This function is a hook for `message-send-hook'."
       (if (get-text-property (org-msg-start) 'mml)
 	  (message "Warning: org-msg: %S is already a MML buffer"
 		   (current-buffer))
-	(let ((mail (org-msg-build))
-	      (attachments (org-msg-get-prop "attachment")))
-	  (dolist (file attachments)
-	    (unless (file-exists-p file)
+	(let ((alternatives (org-msg-get-prop "attachment"))
+	      (attachments (org-msg-get-prop "alternatives")))
+          ;; Verify all attachments exist
+          (dolist (file attachments)
+            (unless (file-exists-p file)
 	      (error "File '%s' does not exist" file)))
+          ;; Set temporary global variable with attachment list
 	  (setq org-msg-attachment attachments)
-	  (when org-msg-text-plain-alternative
-	    (setq org-msg-text-plain (org-msg-org-to-text-plain)))
+          ;; Generate contents of alternatives and save globally
+          (setq org-msg-alternatives
+                (org-msg-build-alternatives alternatives))
+          ;; Clear the contents of the message
 	  (goto-char (org-msg-start))
 	  (delete-region (org-msg-start) (point-max))
-	  (when (org-msg-mml-recursive-support)
-	    (when attachments
-	      (mml-insert-multipart "mixed")
-	      (dolist (file attachments)
-		(mml-insert-tag 'part 'type (org-msg-file-mime-type file)
-				'filename file 'disposition "attachment")))
-	    (when org-msg-text-plain-alternative
-	      (mml-insert-multipart "alternative")
-	      (mml-insert-part "text/plain")
-	      (insert org-msg-text-plain)
-	      (forward-line)))
-	  (mml-insert-part "text/html")
-	  (insert (propertize (org-msg-xml-to-str mail) 'mml t)))))))
+          ;; If mml has recursive html support (in later versions of emacs)
+          ;; we want to generate the structure of the MIME document here.
+          ;; If not we do this by manually editing the structure of the
+          ;; parsed MML tree in `org-msg-mml-into-multipart-related'. We
+          ;; also don't need to worry about this if we are only sending
+          ;; text/plain
+          (if (or (org-msg-mml-recursive-support)
+                  (not (assq 'html org-msg-alternatives)))
+              (progn
+                (when attachments
+                  (mml-insert-multipart "mixed"))
+                (when (> (length org-msg-alternatives) 1)
+                  (mml-insert-multipart "alternative"))
+                (dolist (alt org-msg-alternatives)
+                  (mml-insert-part (car alt))
+                  (insert (cdr alt))
+                  (forward-line))
+                (when (> (length org-msg-alternatives) 1)
+                  (forward-line))
+                (dolist (file attachments)
+		  (mml-insert-tag 'part 'type (org-msg-file-mime-type file)
+				  'filename file 'disposition "attachment")))
+            (mml-insert-part "text/html")
+            (insert (cdr (assoc "text/html" org-msg-alternatives))))
+          ;; Propertise the message contents so we don't accidently run
+          ;; this function on the buffer twice
+          (add-text-properties (save-excursion (message-goto-body))
+                               (point-max)
+                               '(mml t)))))))
 
 (defun org-msg-file-mime-type (file)
   "Return FILE mime type based on FILE extension.
@@ -771,21 +821,30 @@ The implementation depends on the `org-msg-attachment' temporary
 variable set by `org-msg-prepare-to-send'."
   (setq cont (funcall orig-fun cont))
   (let ((newparts '()))
+    ;; Generate this list of attachment parts
     (dolist (file org-msg-attachment)
       (let ((type (org-msg-file-mime-type file)))
 	(push (list 'part `(type . ,type) `(filename . ,file)
 		    '(disposition . "attachment"))
 	      newparts)))
     (let ((alternative (if (eq (car cont) 'multipart) (list cont) cont)))
-      (when org-msg-text-plain-alternative
-	(setf alternative (push `(part (type . "text/plain")
-				       (disposition . "inline")
-				       (contents . ,org-msg-text-plain))
-				alternative)))
-      (append `(multipart (type . "mixed")
-			  (multipart (type . "alternative")
-				     ,@alternative))
-	      newparts))))
+      ;; Generate and insert any non-html alternatives
+      (when (> (length org-msg-alternatives) 1)
+        (dolist (alt org-msg-alternatives)
+          (unless (equal (car alt) "text/html")
+            (push `(part (type . ,(car alt))
+		         (disposition . "inline")
+		         (contents . ,(cdr alt)))
+	          alternative)))
+        ;; Put all the alternatives in a multipart
+        (setf alternative `((multipart (type . "alternative")
+                                       ,@alternative))))
+      ;; Combine the attachments and the resulting content part/multipart
+      (if org-msg-attachment
+          `(multipart (type . "mixed")
+                      ,@alternative
+                      ,@newparts)
+	alternative))))
 
 (defun org-msg-html--todo (orig-fun todo &optional info)
   "Format todo keywords into HTML.
@@ -854,8 +913,9 @@ automatically greet the right name, see `org-msg-greeting-fmt'."
 REPLY-TO is the file path of the original email export in HTML."
   (concat (format "#+OPTIONS: %s d:nil\n#+STARTUP: %s\n"
 		  (or org-msg-options "") (or org-msg-startup ""))
-	  (format ":PROPERTIES:\n:reply-to: %S\n:attachment: nil\n:END:\n"
-		  reply-to)))
+	  (format ":PROPERTIES:\n:reply-to: %S\n:attachment: nil\n:alternatives: %s\n:END:\n"
+		  reply-to
+                  org-msg-default-alternatives)))
 
 (defun org-msg-article-htmlp-gnus ()
   "Return t if the current gnus article is HTML article.
