@@ -391,6 +391,32 @@ file."
 	(write-file file))
       (list file))))
 
+(defun org-msg-save-article-for-reply-notmuch ()
+  "Export the currently visited notmuch article as HTML."
+  (save-excursion
+    (let* ((id org-msg-current-reply-query)
+           (temp-buffer (get-buffer-create
+                         (concat "*notmuch-rply-raw-" id "*")))
+           (file (make-temp-file "notmuch-")))
+      ;; Get the raw version of this message in the buffer.
+      (with-current-buffer temp-buffer
+        (erase-buffer)
+        (let ((coding-system-for-read 'no-conversion))
+          (call-process notmuch-command nil t nil "show" "--format=raw" id))
+        ;; Remove everything before html tag
+        (goto-char (point-min))
+        (if (re-search-forward "^<html\\(.*?\\)>" nil t)
+            (progn
+              (delete-region (point-min) (match-beginning 0))
+              (if (re-search-forward "^</html\\(.*?\\)>" nil t)
+                  (delete-region (match-end 0) (point-max))))
+          ;; Handle malformed HTML
+          (insert "<html><body>")
+          (goto-char (point-max))
+          (insert "</body></html>"))
+        (write-file file)
+        (list file)))))
+
 (defun org-msg-attrs-str (attr)
   "Convert ATTR list of attributes into a string."
   (cl-flet ((attr-str (x)
@@ -941,6 +967,7 @@ If the current `message' buffer is a reply, the
 `org-msg-separator' string is inserted at the end of the editing
 area."
   (unless (eq major-mode 'org-msg-edit-mode)
+    (setq org-msg-current-reply-query (car _args))
     (message-goto-body)
     (let ((new (not (org-msg-message-fetch-field "subject")))
 	  (reply-to))
@@ -1182,6 +1209,10 @@ HTML emails."
             (lambda () ;;  mu4e~compose-mark-after-sending
               (setq mu4e-sent-func 'mu4e-sent-handler)
               (mu4e~proc-sent (buffer-file-name))) nil t))
+
+(defun org-msg-edit-mode-notmuch ()
+  "Setup notmuch in org-msg edit mode."
+  (run-at-time 3 nil #'notmuch-address-setup))
 
 (defalias 'org-msg-edit-kill-buffer-mu4e 'mu4e-message-kill-buffer)
 
