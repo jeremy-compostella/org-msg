@@ -737,14 +737,14 @@ With the prefix argument ARG set, it calls
 (defun org-msg-build-alternatives (alternatives)
   "Build the contents of the current Org-msg buffer for each of the ALTERNATIVES."
   ;; Verify that all exporters are actually available
-  (let ((available (map #'car org-msg-alternative-exporters)))
+  (let ((available (mapcar #'car org-msg-alternative-exporters))
+        (str (buffer-substring-no-properties (org-msg-start) (org-msg-end))))
     (dolist (alt alternatives)
       (unless (member alt available)
         (error "%s is not a valid alternative, must be one of %s"
                missing
-               available))))
-  ;; Build the contents of each alternative
-  (let ((str (buffer-substring-no-properties (org-msg-start) (org-msg-end))))
+               available)))
+    ;; Build the contents of each alternative
     (mapcar (lambda (alt)
               (let ((exporter (cdr (assq alt org-msg-alternative-exporters))))
                 (cons (car exporter)
@@ -757,22 +757,21 @@ This function is a hook for `message-send-hook'."
   (save-window-excursion
     (when (eq major-mode 'org-msg-edit-mode)
       (if (get-text-property (org-msg-start) 'mml)
-	  (message "Warning: org-msg: %S is already a MML buffer"
-		   (current-buffer))
-	(let ((alternatives (org-msg-get-prop "attachment"))
-	      (attachments (org-msg-get-prop "alternatives")))
+          (message "Warning: org-msg: %S is already a MML buffer" (current-buffer))
+        (let ((alternatives (org-msg-get-prop "alternatives"))
+              (attachments (org-msg-get-prop "attachment")))
           ;; Verify all attachments exist
           (dolist (file attachments)
             (unless (file-exists-p file)
-	      (error "File '%s' does not exist" file)))
+              (error "File '%s' does not exist" file)))
           ;; Set temporary global variable with attachment list
-	  (setq org-msg-attachment attachments)
+          (setq org-msg-attachment attachments)
           ;; Generate contents of alternatives and save globally
           (setq org-msg-alternatives
                 (org-msg-build-alternatives alternatives))
           ;; Clear the contents of the message
-	  (goto-char (org-msg-start))
-	  (delete-region (org-msg-start) (point-max))
+          (goto-char (org-msg-start))
+          (delete-region (org-msg-start) (point-max))
           ;; If mml has recursive html support (in later versions of emacs)
           ;; we want to generate the structure of the MIME document here.
           ;; If not we do this by manually editing the structure of the
@@ -793,8 +792,8 @@ This function is a hook for `message-send-hook'."
                 (when (> (length org-msg-alternatives) 1)
                   (forward-line))
                 (dolist (file attachments)
-		  (mml-insert-tag 'part 'type (org-msg-file-mime-type file)
-				  'filename file 'disposition "attachment")))
+                  (mml-insert-tag 'part 'type (org-msg-file-mime-type file)
+                                  'filename file 'disposition "attachment")))
             (mml-insert-part "text/html")
             (insert (cdr (assoc "text/html" org-msg-alternatives))))
           ;; Propertise the message contents so we don't accidently run
