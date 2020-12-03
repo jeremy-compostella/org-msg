@@ -47,7 +47,7 @@ The following is my configuration which you can use as an example.
 	org-msg-startup "hidestars indent inlineimages"
 	org-msg-greeting-fmt "\nHi *%s*,\n\n"
 	org-msg-greeting-name-limit 3
-	org-msg-default-alternatives '(html text)
+	org-msg-default-alternatives '(text html)
 	org-msg-signature "
 
   Regards,
@@ -62,6 +62,8 @@ The following is my configuration which you can use as an example.
 The ~org-msg-greeting-fmt~ can be customized to configure the default greeting message.  If this format contains a ~%s~ token it is automatically replaced with the first name of the person you are replying to.  If ~org-msg-greeting-fmt-mailto~ is t, the first name it is formatted as mailto link.
 
 The types of MIME alternatives that are sent can be modified by editing the ~:alternatives:~ property on each message. For example, setting this property to ~(html text)~ will send both text and HTML alternatives to your message, whereas ~(html)~ or ~(text)~ will just send HTML or plain text respectively. The default value of ~:alternatives:~ can be set with ~org-msg-default-alternatives~. If you want to add your own custom exporters, this can be done by modifying ~org-msg-alternative-exporters~.
+
+Alternatives listed in ~org-msg-default-alternatives~ should be placed in increasing order of preference to meet [[https://www.w3.org/Protocols/rfc1341/7_2_Multipart.html][RFC-1341]] *section 7.2.3* guidelines.
 
 In order to avoid CSS conflict, *OrgMsg* performs inline replacement when it generates the final HTML message.  See the ~org-msg-enforce-css~ variable to customize the style (and the default ~org-msg-default-style~ variable for reference).
 
