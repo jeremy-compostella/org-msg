@@ -200,6 +200,11 @@ Example:
 \"\n\nRegards,\n\n#+begin_signature\n-- *Your name*\n#+end_signature\""
   :type '(string))
 
+(defcustom org-msg-dnd-protocol-alist
+  '(("^file:" . org-msg-dnd-handle-file))
+  "The functions to call when a file drop is made."
+  :type '(repeat (cons (regexp) (function))))
+
 (defconst org-msg-default-style
   (let* ((font-family '(font-family . "\"Arial\""))
 	 (font-size '(font-size . "10pt"))
@@ -312,6 +317,14 @@ Example:
 				   (notmuch-user-agent . "notmuch"))
   "Supported Mail User Agents."
   :type '(alist :value-type string))
+
+(defun org-msg-dnd-handle-file (uri action)
+  "Attach a file to the current draft.
+URI is the file to handle, ACTION is one of copy, move, link or
+ask."
+  (let ((file (dnd-get-local-file-name uri t)))
+    (when file
+      (org-msg-attach-attach file))))
 
 (defun org-msg-mua-call (sym &optional default &rest arg)
   "Call the specific MUA function for SYM with ARG parameters.
@@ -1228,6 +1241,9 @@ Type \\[org-msg-attach] to call the dispatcher for attachment
   (toggle-truncate-lines)
   (org-msg-mua-call 'edit-mode)
   (setq-local kill-buffer-hook 'org-msg-kill-buffer)
+  (when (featurep 'dnd)
+    (setq-local dnd-protocol-alist
+                (append org-msg-dnd-protocol-alist dnd-protocol-alist)))
   (unless (= (org-msg-end) (point-max))
     (add-text-properties (1- (org-msg-end)) (point-max) '(read-only t))))
 
