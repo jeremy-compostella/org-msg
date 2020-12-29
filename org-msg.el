@@ -1122,6 +1122,7 @@ HTML emails."
   (if org-msg-mode
       (progn
 	(put 'message-sent-hook 'permanent-local t)
+	(put 'message-exit-actions 'permanent-local t)
 	(add-hook 'org-ctrl-c-ctrl-c-final-hook 'org-msg-ctrl-c-ctrl-c)
 	(add-to-list 'message-syntax-checks '(invisible-text . disabled))
 	(unless (org-msg-mml-recursive-support)
@@ -1132,6 +1133,7 @@ HTML emails."
 	(when (boundp 'bbdb-mua-mode-alist)
 	  (add-to-list 'bbdb-mua-mode-alist '(message org-msg-edit-mode))))
     (put 'message-sent-hook 'permanent-local nil)
+    (put 'message-exit-actions 'permanent-local nil)
     (remove-hook 'org-ctrl-c-ctrl-c-final-hook 'org-msg-ctrl-c-ctrl-c)
     (setq message-syntax-checks (delete '(invisible-text . disabled)
 					message-syntax-checks))
