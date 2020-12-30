@@ -121,6 +121,7 @@
 (require 'cl-macs)
 (require 'cl-seq)
 (require 'gnus-art)
+(require 'gnus-cite)
 (require 'gnus-msg)
 (require 'htmlize)
 (require 'message)
@@ -205,6 +206,18 @@ Example:
   "The functions to call when a file drop is made."
   :type '(repeat (cons (regexp) (function))))
 
+(defun org-msg-lighten (color)
+  "Make a color lighter by a 20%."
+  (apply 'color-rgb-to-hex
+	 (append
+	  (apply 'color-hsl-to-rgb
+		 (apply 'color-lighten-hsl
+			(append
+			 (apply 'color-rgb-to-hsl
+				(color-name-to-rgb color))
+			 (list 20))))
+	  (list 2))))
+
 (defconst org-msg-default-style
   (let* ((font-family '(font-family . "\"Arial\""))
 	 (font-size '(font-size . "10pt"))
@@ -224,7 +237,22 @@ Example:
 	  (mapcar (lambda (mode)
 		    `(code ,(intern (concat "src src-" (symbol-name mode)))
 			   ,inline-src))
-		  inline-modes)))
+		  inline-modes))
+	 (base-quote '((padding-left . "5px") (margin-left . "10px")
+		       (margin-top . "20px") (margin-bottom . "0")
+		       (font-style . "italic") (background . "#f9f9f9")))
+	 (quote-palette '("#324e72" "#6a3a4c" "#7a4900" "#ff34ff"
+			  "#ff4a46" "#008941" "#006fa6" "#a30059"
+			  "#ffdbe5" "#000000" "#0000a6" "#63ffac"))
+	 (quotes
+	  (mapcar (lambda (x)
+		    (let ((c (nth x quote-palette)))
+		      `(div ,(intern (format "quote%d" (1+ x)))
+			    (,@base-quote
+			     (color . ,c)
+			     (border-left . ,(concat "3px solid "
+						     (org-msg-lighten c)))))))
+		  (number-sequence 0 (1- (length quote-palette))))))
   `((del nil (,@font (color . "grey") (border-left . "none")
 	      (text-decoration . "line-through") (margin-bottom . "0px")
 	      (margin-top . "10px") (line-height . "11pt")))
@@ -241,10 +269,9 @@ Example:
 		 (margin-top . "0px") (margin-left . "30px")
 		 (padding-top . "0px") (padding-left . "5px")))
     (nil signature (,@font (margin-bottom . "20px")))
-    (blockquote nil ((padding-left . "5px") (margin-left . "10px")
-		     (margin-top . "20px") (margin-bottom . "0")
-		     (border-left . "3px solid #ccc") (font-style . "italic")
-		     (background . "#f9f9f9")))
+    (blockquote nil ,(append base-quote '((border-left . "3px solid #ccc"))))
+    (div quote0 ,(append base-quote '((border-left . "3px solid #ccc"))))
+    ,@quotes
     (code nil (,font-size (font-family . "monospace") (background . "#f9f9f9")))
     ,@code-src
     (nil linenr ((padding-right . "1em")
@@ -310,6 +337,13 @@ Example:
 (defcustom org-msg-reply-header-class 'reply-header
   "Default CSS class for reply header tags."
   :type '(symbol))
+
+(defcustom org-msg-convert-citation nil
+  "Activate the conversion of mail citation into quote blocks.
+If t, lines matching the '^>+ ' regular expression are turned
+into multi-level quote blocks before being passed to the Org mode
+HTML export engine."
+  :type '(boolean))
 
 (defcustom org-msg-supported-mua '((gnus-user-agent . "gnus")
 				   (message-user-agent . "gnus")
@@ -488,6 +522,35 @@ See `org-msg-css-to-list'."
 		      (cdr css) ";")))
     (apply 'concat (mapcar #'css-str props))))
 
+(defsubst org-msg-in-quote-block ()
+  "Whether point is in a quote block."
+  (let ((face (get-char-property (point) 'face)))
+    (if (listp face)
+	(find 'org-quote face)
+      (eq 'org-quote face))))
+
+(defun org-msg-ascii-blockquote (&optional level begin end)
+  "Recursively convert lines matching the `^>+ ' regular
+expression into multi-level quote blocks."
+  (let ((suffix (format "quote%d\n" level)))
+    (goto-char begin)
+    (while (re-search-forward "^>+ " end t)
+      (if (and (= level 0) (org-msg-in-quote-block))
+	  (org-msg-ascii-blockquote (1+ level) begin end)
+	(unless (org-in-src-block-p)
+	  (goto-char (line-beginning-position))
+	  (let ((new-begin (point-marker)))
+	    (insert "#+begin_" suffix)
+	    (when (re-search-forward "^[^>]" end t)
+	      (goto-char (line-beginning-position))
+	      (insert "#+end_" suffix)
+	      (let ((new-end (point-marker)))
+		(goto-char new-begin)
+		(while (re-search-forward "^>" new-end t)
+		  (replace-match "")
+		  (forward-char 1))
+		(org-msg-ascii-blockquote (1+ level) new-begin new-end)))))))))
+
 (defun org-msg-build-style (tag class css)
   "Given a TAG and CLASS selector, it builds a CSS style string.
 This string can be used as a HTML style attribute value."
@@ -651,6 +714,8 @@ absolute paths."
   (save-window-excursion
     (with-temp-buffer
       (insert str)
+      (when org-msg-convert-citation
+	(org-msg-ascii-blockquote 0 (point-min-marker) (point-max-marker)))
       (let ((org-html-table-default-attributes nil)
 	    (org-html-htmlize-output-type 'inline-css)
 	    (org-html-head-include-scripts nil)
@@ -740,7 +805,7 @@ With the prefix argument ARG set, it calls
 					   'xwidget-webkit-browse-url
 					 browse-url-browser-function))
 	  (tmp-file (make-temp-file "org-msg" nil ".html"))
-	  (mail (org-msg-build (buffer-substring-no-properties
+	  (mail (org-msg-build (buffer-substring
                                 (org-msg-start) (org-msg-end)))))
       (with-temp-buffer
 	(insert (org-msg-xml-to-str mail))
@@ -751,7 +816,7 @@ With the prefix argument ARG set, it calls
   "Build the contents of the current Org-msg buffer for each of the ALTERNATIVES."
   ;; Verify that all exporters are actually available
   (let ((available (mapcar #'car org-msg-alternative-exporters))
-        (str (buffer-substring-no-properties (org-msg-start) (org-msg-end))))
+        (str (buffer-substring (org-msg-start) (org-msg-end))))
     (dolist (alt alternatives)
       (unless (member alt available)
         (error "%s is not a valid alternative, must be one of %s"
@@ -1238,8 +1303,8 @@ Type \\[org-msg-attach] to call the dispatcher for attachment
   (add-hook 'message-sent-hook 'undo t t)
   (add-hook 'completion-at-point-functions 'message-completion-function nil t)
   (setq org-font-lock-keywords
-	(append org-font-lock-keywords message-font-lock-keywords
-		org-msg-font-lock-keywords))
+	(append org-font-lock-keywords gnus-message-citation-keywords
+		message-font-lock-keywords org-msg-font-lock-keywords))
   (toggle-truncate-lines)
   (org-msg-mua-call 'edit-mode)
   (setq-local kill-buffer-hook 'org-msg-kill-buffer)

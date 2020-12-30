@@ -48,6 +48,7 @@ The following is my configuration which you can use as an example.
 	org-msg-greeting-fmt "\nHi *%s*,\n\n"
 	org-msg-greeting-name-limit 3
 	org-msg-default-alternatives '(text html)
+	org-msg-convert-citation t
 	org-msg-signature "
 
   Regards,
@@ -68,3 +69,21 @@ Alternatives listed in ~org-msg-default-alternatives~ should be placed in increa
 In order to avoid CSS conflict, *OrgMsg* performs inline replacement when it generates the final HTML message.  See the ~org-msg-enforce-css~ variable to customize the style (and the default ~org-msg-default-style~ variable for reference).
 
 Setting the org export option ~tex:dvipng~ or ~tex:dvisvgm~ is handeled correctly by this mode by producing inline images or inlining the generated SVG. Note that most mailclients however sadly do not display SVG content in mails so it might be best to stick to settings producing images unless you know your recipient's mailclient supports SVG.
+
+* Quotes
+
+Org mode supports quotes using [[https://www.gnu.org/software/emacs/manual/html_mono/org.html#Paragraphs][quote blocks]]. The Org mode HTML backend exports such blocks as ~blockquote~ HTML tags and *OrgMsg* will apply a CSS style on top of it.  Unfortunately, the Org mode engine does not allow nested quote blocks.
+
+*OrgMsg* supports nested quotes with special ~#+{begin|end}_quote[0-9]+~ blocks. A ~#+{begin|end}_quote1~ block can be nested in a ~#+{begin|end}_quote~ block, a  ~#+{begin|end}_quote2~ block can be nested in a ~#+{begin|end}_quote1~ block ... In order to ease the identification of the different levels of quotes once exported to HTML, each level uses a different color.
+
+Using ~#+{begin|end}_quote[0-9]+~ can be cumbersome and as thus, *OrgMsg*  also supports the automatic conversion of the well established ASCII quote form based on the ~>~ characters. For instance, if the ~org-msg-convert-citation~ customization variable is set to ~t~, the following text will be automatically converted to multi-level quote blocks before being exported to HTML.
+
+#+begin_src
+> quote an email
+>> which had quoted another email
+>>> which had quoted another email
+#+end_src
+
+And it will look like this.
+
+[[./quotes.png]]
