@@ -710,9 +710,9 @@ absolute paths."
 		   (setf (cadr xml) (assq-delete-all 'class (cadr xml)))
 		   (push `(style . ,style) (cadr xml)))))
 	      (fix-img-src (xml)
-			   (let ((src (assq 'src (cadr xml))))
-			     (when (string-prefix-p "file://" (cdr src))
-			       (setcdr src (substring (cdr src) (length "file://")))))))
+		(let ((src (assq 'src (cadr xml))))
+		  (when (string-prefix-p "file://" (cdr src))
+		    (setcdr src (substring (cdr src) (length "file://")))))))
       (let* ((reply (org-msg-org-to-xml org default-directory))
 	     (temp-files (org-msg-get-prop "reply-to"))
 	     (original (when temp-files
