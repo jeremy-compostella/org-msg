@@ -526,7 +526,7 @@ See `org-msg-css-to-list'."
   "Whether point is in a quote block."
   (let ((face (get-char-property (point) 'face)))
     (if (listp face)
-	(find 'org-quote face)
+	(cl-find 'org-quote face)
       (eq 'org-quote face))))
 
 (defun org-msg-ascii-blockquote (&optional level begin end)
