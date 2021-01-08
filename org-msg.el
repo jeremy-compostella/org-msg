@@ -777,7 +777,18 @@ absolute paths."
 	      (fix-img-src (xml)
 		(let ((src (assq 'src (cadr xml))))
 		  (when (string-prefix-p "file://" (cdr src))
-		    (setcdr src (substring (cdr src) (length "file://")))))))
+		    (setcdr src (substring (cdr src) (length "file://"))))))
+	      (set-charset (xml)
+		(when (eq 'meta (car xml))
+		  (let ((l (cadr xml)))
+		    (cond ((string= (downcase (alist-get 'http-equiv l "?"))
+				    "content-type")
+			   (setf (alist-get 'content l)
+				 (format "text/html;charset=%s"
+					 org-html-coding-system)))
+			  ((alist-get 'charset l)
+			   (setf (alist-get 'charset l)
+				 (symbol-name org-html-coding-system))))))))
       (let* ((reply (org-msg-org-to-xml org default-directory))
 	     (temp-files (org-msg-get-prop "reply-to"))
 	     (original (when temp-files
@@ -793,6 +804,8 @@ absolute paths."
 	  (push (or (assq 'article (assq 'body reply))
 		    (assq 'div (assq 'body reply)))
 		(cddr (assq 'body original))))
+	(when original
+	  (org-msg-xml-walk original #'set-charset))
 	(or original reply)))))
 
 (defun org-msg-preview (arg)
