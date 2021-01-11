@@ -664,7 +664,12 @@ BASE is the path used to convert the IMG SRC relative paths to
 absolute paths.  Base is also used to locate SVG objects tag file
 and include the SVG content into the email XML tree."
   (let ((dirs (list base (temporary-file-directory))))
-    (cl-flet* ((get-file-path (file)
+    (cl-flet* ((get-html-root (xml)
+		(catch 'found
+		  (org-msg-xml-walk xml (lambda (x)
+					  (when (eq (car x) 'html)
+					    (throw 'found x))))))
+	       (get-file-path (file)
 		(let ((paths (cl-mapcar 'concat dirs
 					(make-list (length dirs) file))))
 		  (car (cl-delete-if-not 'file-exists-p paths))))
@@ -695,6 +700,7 @@ and include the SVG content into the email XML tree."
 			(setcar xml (car svg))
 			(setcdr xml (cdr svg))))))))
       (let ((xml (libxml-parse-html-region (point-min) (point-max))))
+	(setf xml (get-html-root xml))
 	(when base
 	  (org-msg-xml-walk xml #'make-img-abs)
 	  (org-msg-xml-walk xml #'inline-svg))
