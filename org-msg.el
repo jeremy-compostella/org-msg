@@ -1,6 +1,6 @@
 ;;; org-msg.el --- Org mode to send and reply to email in HTML. -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2018-2020 Jérémy Compostella
+;; Copyright (C) 2018-2021 Jérémy Compostella
 
 ;; Author: Jérémy Compostella <jeremy.compostella@gmail.com>
 ;; Created: January 2018
@@ -344,6 +344,44 @@ If t, lines matching the '^>+ ' regular expression are turned
 into multi-level quote blocks before being passed to the Org mode
 HTML export engine."
   :type '(boolean))
+
+(defcustom org-msg-send-original-with-reply t
+  "Append the original message to the mail when it is sent.
+When non-nil, a copy of the original HTML is automatically
+appended to a reply that is sent.  This works by saving the
+original mail to a temporary file, and adding the name of that
+temporary file to the `:reply-to:' property of the org message.
+When `org-msg-build' construct the message to send, it will use
+the `:reply-to:' property to append the contents of the original
+message.
+
+Set to nil to disable this behavior: sending a full copy of the
+mail you reply to is against the netiquette and usually a waste
+of resources."
+  :type '(boolean))
+
+(defcustom org-msg-show-original-below-reply 'unquoted
+  "Show the original message in the reply buffer.
+When replying to an email, the `mail-user-agent' creates a buffer
+with a quoted copy of the original mail.  This variable controls
+additional processing to get this original message out of your
+way.  Combined with `org-msg-send-original-with-reply', it can
+help to favor the top-posting practice that is customary among
+your colleagues.
+
+When set to t, the contents of the prepared reply is moved to the
+end of the buffer and made read-only.
+
+If set to 'unquoted, the behavior is similar, but leading `>'
+characters are first removed from all lines to make it easier to
+copy the original text into your reply, and format it as you
+please.
+
+When set to nil, the buffer is not modified (use this for
+traditional inline-posting)."
+  :type '(choice (const :tag "Read-only, quoted" t)
+                 (const :tag "Read-only, unquoted" 'unquoted)
+                 (const :tag "Disabled" nil)))
 
 (defcustom org-msg-supported-mua '((gnus-user-agent . "gnus")
 				   (message-user-agent . "gnus")
@@ -1042,7 +1080,7 @@ area."
     (let ((new (not (org-msg-message-fetch-field "subject")))
 	  (reply-to))
       (when (or new (org-msg-mua-call 'article-htmlp))
-	(unless new
+	(when (and (not new) org-msg-send-original-with-reply)
 	  (setq reply-to (org-msg-mua-call 'save-article-for-reply)))
 	(insert (org-msg-header reply-to))
 	(when org-msg-greeting-fmt
@@ -1051,16 +1089,20 @@ area."
 			      ""
 			    (org-msg-get-to-first-name)))))
 	(save-excursion
-	  (unless new
-	    (save-excursion
-	      (insert "\n\n" org-msg-separator "\n")
-	      (delete-region (line-beginning-position)
-			     (1+ (line-end-position)))
-	      (dolist (rep '(("^>+ *" . "") ("___+" . "---")))
-		(save-excursion
-		  (while (re-search-forward (car rep) nil t)
-		    (replace-match (cdr rep)))))
-	      (org-escape-code-in-region (point) (point-max))))
+	  (if (and (not new) org-msg-show-original-below-reply)
+	      (save-excursion
+		(insert "\n\n" org-msg-separator "\n")
+		(delete-region (line-beginning-position)
+			       (1+ (line-end-position)))
+                (when (eq org-msg-show-original-below-reply 'unquoted)
+		  (dolist (rep '(("^>+ *" . "") ("___+" . "---")))
+		    (save-excursion
+		      (while (re-search-forward (car rep) nil t)
+			(replace-match (cdr rep))))))
+		(org-escape-code-in-region (point) (point-max)))
+            ;; If the message was not moved after org-msg-separator,
+            ;; move to the end before adding the signature.
+            (end-of-buffer))
 	  (when org-msg-signature
 	    (insert org-msg-signature))
 	  (org-msg-edit-mode))
