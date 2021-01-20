@@ -670,8 +670,9 @@ and include the SVG content into the email XML tree."
 					  (when (eq (car x) 'html)
 					    (throw 'found x))))))
 	       (get-file-path (file)
-		(let ((paths (cl-mapcar 'concat dirs
-					(make-list (length dirs) file))))
+		(let ((paths (cl-mapcar (lambda (d)
+					  (expand-file-name file d))
+					dirs)))
 		  (car (cl-delete-if-not 'file-exists-p paths))))
 	       (make-img-abs (xml)
 		(when (eq (car xml) 'img)
