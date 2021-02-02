@@ -1327,7 +1327,8 @@ Type \\[org-msg-attach] to call the dispatcher for attachment
 		message-font-lock-keywords org-msg-font-lock-keywords))
   (toggle-truncate-lines)
   (org-msg-mua-call 'edit-mode)
-  (setq-local kill-buffer-hook 'org-msg-kill-buffer)
+  (setq-local kill-buffer-hook 'org-msg-kill-buffer
+	      org-link-file-path-type 'absolute)
   (when (featurep 'dnd)
     (setq-local dnd-protocol-alist
                 (append org-msg-dnd-protocol-alist dnd-protocol-alist)))
