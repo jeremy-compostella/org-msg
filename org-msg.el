@@ -158,6 +158,7 @@ It is used by function advice.")
 
 (defcustom org-msg-alternative-exporters
   '((text . ("text/plain" . org-msg-export-as-text))
+    (org . ("text/plain" . identity))
     (html . ("text/html" . org-msg-export-as-html)))
   "Alist of the available alternative exporters.
 Entries are in the form of `(tag . (mime-part . export-function))'.
