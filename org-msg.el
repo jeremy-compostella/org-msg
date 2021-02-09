@@ -868,7 +868,7 @@ With the prefix argument ARG set, it calls
   (let ((available (mapcar #'car org-msg-alternative-exporters))
         (str (buffer-substring (org-msg-start) (org-msg-end))))
     (dolist (alt alternatives)
-      (unless (member alt available)
+      (unless (memq alt available)
         (error "%s is not a valid alternative, must be one of %s"
                alt available)))
     ;; Build the contents of each alternative
