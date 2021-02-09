@@ -164,7 +164,7 @@ It is used by function advice.")
 Entries are in the form of `(tag . (mime-part . export-function))'.
 The export function takes an `org-msg' message buffer string and
 returns the exported content as a string."
-  :type '(list sexp))
+  :type '(list (const symbol (cons string symbol))))
 
 (defcustom org-msg-default-alternatives '(html)
   "List of alternative MIME formats to send.
