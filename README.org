@@ -46,6 +46,7 @@ The following is my configuration which you can use as an example.
   (setq org-msg-options "html-postamble:nil H:5 num:nil ^:{} toc:nil author:nil email:nil \\n:t"
 	org-msg-startup "hidestars indent inlineimages"
 	org-msg-greeting-fmt "\nHi *%s*,\n\n"
+	org-msg-recipient-names '(("jeremy.compostella@gmail.com" . "Jérémy"))
 	org-msg-greeting-name-limit 3
 	org-msg-default-alternatives '(text html)
 	org-msg-convert-citation t
@@ -60,7 +61,7 @@ The following is my configuration which you can use as an example.
   (org-msg-mode)
 #+end_src
 
-The ~org-msg-greeting-fmt~ can be customized to configure the default greeting message.  If this format contains a ~%s~ token it is automatically replaced with the first name of the person you are replying to.  If ~org-msg-greeting-fmt-mailto~ is t, the first name it is formatted as mailto link.
+The ~org-msg-greeting-fmt~ can be customized to configure the default greeting message.  If this format contains a ~%s~ token it is automatically replaced with the name of the person you are replying to.  The name is either the recipient name specified in the ~org-msg-recipient-names~ list or the first name automatically extracted from the email address. If ~org-msg-greeting-fmt-mailto~ is t, the name is formatted as mailto link.
 
 The types of MIME alternatives that are sent can be modified by editing the ~:alternatives:~ property on each message. For example, setting this property to ~(html text)~ will send both text and HTML alternatives to your message, whereas ~(html)~ or ~(text)~ will just send HTML or plain text respectively. The default value of ~:alternatives:~ can be set with ~org-msg-default-alternatives~. If you want to add your own custom exporters, this can be done by modifying ~org-msg-alternative-exporters~.
 

@@ -179,6 +179,17 @@ name of the person you are replying to.
 Example: \"\nHi %s,\n\n\""
   :type '(string))
 
+(defcustom org-msg-recipient-names '()
+  "List of recipients preferred names.
+The automatic replacement of '%s' format in
+`org-msg-greeting-fmt' is not always ideal.  Some email addresses
+do not include the actual recipient name or this recipient wants
+to be called with another name, an acronym or its name has
+accents. This variable can be used to specify these exceptions.
+
+Example: ((\"jeremy.compostella@gmail.com\" . \"Jérémy\"))"
+  :type '(list (const string string)))
+
 (defcustom org-msg-greeting-name-limit 1
   "Maximum number of recipient first name for the greeting format.
 If replying to an email for which the 'To' field contains more
@@ -189,8 +200,8 @@ used as a replacement of the '%s' format.  nil means unlimited."
 
 (defcustom org-msg-greeting-fmt-mailto nil
   "Define the format behavior for recipient greeting.
-If t and `org-msg-greeting-fmt' contains a '%s' the first name is
-formatted as a mailto link."
+If t and `org-msg-greeting-fmt' contains a '%s' the recipient
+name is formatted as a mailto link."
   :type '(boolean))
 
 (defcustom org-msg-signature nil
@@ -981,22 +992,26 @@ This function is used as an advice function of `org-html--todo'.
       (message-narrow-to-headers)
       (message-fetch-field field-name))))
 
-(defun org-msg-get-to-first-name ()
-  "Return the first name of the recipient.
+(defun org-msg-get-to-name ()
+  "Return the name of the recipient.
 It parses the 'To:' field of the current `org-msg-edit-mode'
-buffer to extract and return the first name.  It is used to
-automatically greet the right name, see `org-msg-greeting-fmt'."
+buffer to extract and return a name.  The returned name is either
+the recipient name specified in `org-msg-recipient-names' or the
+first name automatically extracted from the email address. It is
+used to automatically greet the right name, see
+`org-msg-greeting-fmt'."
   (cl-flet ((recipient2name (r)
 	     (cl-multiple-value-bind (name mail) r
-		 (when name
-		   (let* ((split (split-string name ", " t))
-			  (first-name (if (= (length split) 2)
-					  (cadr split)
-					(car (split-string name " " t)))))
-		     (setf first-name (capitalize first-name))
-		     (if org-msg-greeting-fmt-mailto
-			 (format "[[mailto:%s][%s]]" mail first-name)
-		       first-name))))))
+	       (when name
+		 (or (assoc-default mail org-msg-recipient-names)
+		     (let* ((split (split-string name ", " t))
+			    (first-name (if (= (length split) 2)
+					    (cadr split)
+					  (car (split-string name " " t)))))
+		       (setf first-name (capitalize first-name))
+		       (if org-msg-greeting-fmt-mailto
+			   (format "[[mailto:%s][%s]]" mail first-name)
+			 first-name)))))))
     (save-excursion
       (let ((to (org-msg-message-fetch-field "to")))
 	(if to
@@ -1051,7 +1066,7 @@ area."
 	  (insert (format org-msg-greeting-fmt
 			  (if new
 			      ""
-			    (org-msg-get-to-first-name)))))
+			    (org-msg-get-to-name)))))
 	(save-excursion
 	  (unless new
 	    (save-excursion
