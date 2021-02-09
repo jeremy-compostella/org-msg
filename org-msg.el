@@ -878,7 +878,7 @@ This function is a hook for `message-send-hook'."
           ;; also don't need to worry about this if we are only sending
           ;; text/plain
           (if (or (org-msg-mml-recursive-support)
-                  (not (assq 'html org-msg-alternatives)))
+                  (not (memq 'html alternatives)))
               (progn
                 (when attachments
                   (mml-insert-multipart "mixed"))
