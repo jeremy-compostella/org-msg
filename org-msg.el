@@ -870,8 +870,7 @@ With the prefix argument ARG set, it calls
     (dolist (alt alternatives)
       (unless (member alt available)
         (error "%s is not a valid alternative, must be one of %s"
-               missing
-               available)))
+               alt available)))
     ;; Build the contents of each alternative
     (mapcar (lambda (alt)
               (let ((exporter (cdr (assq alt org-msg-alternative-exporters))))
