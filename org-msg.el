@@ -412,7 +412,7 @@ file."
   "Export the currently visited mu4e article as HTML."
   (let* ((msg mu4e-compose-parent-message)
 	 (html (mu4e-message-field msg :body-html))
-	 (file (concat "/tmp/" (mu4e-message-field msg :message-id))))
+	 (file (make-temp-file "org-msg" nil ".html")))
     (cl-flet* ((mails2str (l)
 		 (mapconcat (lambda (m)
 			      (format "%S &lt;%s&gt;" (car m) (cdr m)))
