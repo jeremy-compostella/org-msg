@@ -1334,7 +1334,7 @@ Type \\[org-msg-attach] to call the dispatcher for attachment
   commands.
 
 \\{org-msg-edit-mode-map}"
-  (set (make-local-variable 'message-sent-message-via) nil)
+  (setq-local message-sent-message-via nil)
   (add-hook 'message-send-hook 'org-msg-prepare-to-send nil t)
   (add-hook 'message-sent-hook 'undo t t)
   (add-hook 'completion-at-point-functions 'message-completion-function nil t)
