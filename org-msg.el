@@ -1103,6 +1103,21 @@ a html mime part, it returns t, nil otherwise."
   ;; Seems like never the case for notmuch but we want to use org-msg
   t)
 
+
+(defun org-msg--type-is-not-plain-text (part)
+  (not (string-equal (cdr (assoc 'type part)) "text/plain")))
+
+(defun org-msg--only-text-body ()
+  "Check whether the body of the message if only composed of the
+normal text/plain part or more complex MLL statements are
+present.  The point is assumed to be at the beginning of the body."
+  ;; FIXME: On the long run, one should attempt to convert the MML to
+  ;; org-mode instead.
+  (save-restriction
+    (narrow-to-region (point) (point-max))
+    (let ((cont (mml-parse)))
+      (not (find-if #'org-msg--type-is-not-plain-text cont)))))
+
 (defun org-msg-post-setup (&rest _args)
   "Transform the current `message' buffer into a OrgMsg buffer.
 If the current `message' buffer is a reply, the
@@ -1112,7 +1127,8 @@ area."
     (message-goto-body)
     (let ((new (not (org-msg-message-fetch-field "subject")))
 	  (reply-to))
-      (when (or new (org-msg-mua-call 'article-htmlp))
+      (when (and (or new (org-msg-mua-call 'article-htmlp))
+                 (org-msg--only-text-body))
 	(unless new
 	  (setq reply-to (org-msg-mua-call 'save-article-for-reply)))
 	(insert (org-msg-header reply-to))
