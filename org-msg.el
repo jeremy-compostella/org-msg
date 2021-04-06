@@ -846,21 +846,32 @@ absolute paths."
 	(or original reply)))))
 
 (defun org-msg-preview (arg)
-  "Create a temporary mail and open it with `browse-url'.
-With the prefix argument ARG set, it calls
-`xwidget-webkit-browse-url' instead of `browse-url'."
+  "Export and display the current OrgMsg buffer.
+It uses the last alternative of the `alternatives' property as
+the alternatives should be listed in increasing order of
+preference.  If this alternative is `html' it calls the
+`browse-url' function to display the exported mail in a web
+browser.  With the prefix argument ARG set, it calls
+`xwidget-webkit-browse-url' instead of `browse-url'.  For all
+other alternatives, it displays the exported result in a buffer."
   (interactive "P")
-  (save-window-excursion
-    (let ((browse-url-browser-function (if arg
-					   'xwidget-webkit-browse-url
-					 browse-url-browser-function))
-	  (tmp-file (make-temp-file "org-msg" nil ".html"))
-	  (mail (org-msg-build (buffer-substring
-                                (org-msg-start) (org-msg-end)))))
-      (with-temp-buffer
-	(insert (org-msg-xml-to-str mail))
-	(write-file tmp-file))
-      (browse-url (concat "file://" tmp-file)))))
+  (let* ((preferred (last (org-msg-get-prop "alternatives")))
+	 (alt (car (org-msg-build-alternatives preferred))))
+    (cond ((string= (car alt) "text/html")
+	   (save-window-excursion
+	     (let ((browse-url-browser-function (if arg
+						    'xwidget-webkit-browse-url
+						  browse-url-browser-function))
+		   (tmp-file (make-temp-file "org-msg" nil ".html")))
+	       (with-temp-buffer
+		 (insert (cdr alt))
+		 (write-file tmp-file))
+	       (browse-url (concat "file://" tmp-file)))))
+	  (t (with-current-buffer (get-buffer-create
+				   (format "*OrgMsg %s Preview*" (car alt)))
+	       (delete-region (point-min) (point-max))
+	       (insert (cdr alt)))
+	     (display-buffer (current-buffer))))))
 
 (defun org-msg-build-alternatives (alternatives)
   "Build the contents of the current Org-msg buffer for each of the ALTERNATIVES."

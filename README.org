@@ -18,7 +18,7 @@ Outlook email are really poor compared to what can be achieved by [[https://orgm
 
 The *OrgMsg* mode keys are the usual key combination used in either [[https://orgmode.org/][Org mode]] or [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][Message mode]].
 
-- ~C-c C-e~ -- calls ~org-msg-preview~, it generates the final HTML email, save it into a temporary file and call the ~browse-url~ function on that file.
+- ~C-c C-e~ -- calls ~org-msg-preview~ which generate and display the exported version of the email
 - ~C-c C-k~ -- calls ~message-kill-buffer~
 - ~C-c C-s~ -- calls ~message-goto-subject~ (same as in [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][Message mode]])
 - ~C-c C-b~ -- calls ~org-msg-goto-body~ (similar to ~message-goto-body~ in [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][Message mode]])
