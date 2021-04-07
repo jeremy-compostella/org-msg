@@ -1165,7 +1165,8 @@ d       Delete one attachment, you will be prompted for a file name."))
   (if org-msg-signature
       (when (search-forward org-msg-signature nil t)
 	(goto-char (match-beginning 0)))
-    (message-goto-body)))
+    (while (re-search-forward org-property-re nil t)
+      (forward-line))))
 
 (defun org-msg-font-lock-make-header-matcher (regexp)
   "Create a function which look for REGEXP."
