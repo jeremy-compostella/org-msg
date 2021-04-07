@@ -793,8 +793,10 @@ absolute paths."
   "Transform the Org STR into a plain text."
   (with-temp-buffer
     (insert str)
-    (with-current-buffer (org-ascii-export-as-ascii)
-      (buffer-string))))
+    (cl-letf (((symbol-function #'fill-region) #'ignore))
+      (let ((org-ascii-inner-margin 0))
+	(with-current-buffer (org-ascii-export-as-ascii)
+	  (buffer-string))))))
 
 (defun org-msg-export-as-html (str)
   "Transform the Org STR into html."
