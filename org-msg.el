@@ -559,7 +559,7 @@ See `org-msg-css-to-list'."
 	(cl-find 'org-quote face)
       (eq 'org-quote face))))
 
-(defun org-msg-ascii-blockquote (&optional level begin end)
+(defun org-msg-ascii-blockquote (level begin end)
   "Recursively convert lines matching the `^>+ ' regular
 expression into multi-level quote blocks."
   (let ((suffix (format "quote%d\n" level)))
