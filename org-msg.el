@@ -520,7 +520,7 @@ during email generation where '&apos;' is turned into
   (let ((l))
     (save-excursion
       (goto-char (point-min))
-      (while (re-search-forward "\\\([a-zA-Z0-9, \-\\\._]+\\\) *{" nil t)
+      (while (re-search-forward "\\([a-zA-Z0-9, -\\._]+\\) *{" nil t)
 	(let ((selectors (split-string (match-string 1) "," nil " +"))
 	      (start (point))
 	      (props '()))
@@ -531,7 +531,7 @@ during email generation where '&apos;' is turned into
 	      (cl-multiple-value-bind (prop val) (split-string p ":" t "[\n ]*")
 		(push (cons (intern prop) val) props)))
 	    (dolist (sel selectors)
-	      (cl-multiple-value-bind (tag class) (split-string sel "\\\.")
+	      (cl-multiple-value-bind (tag class) (split-string sel "\\.")
 		(push (list (if (string= tag "") nil (intern tag))
 			    (if (stringp class) (intern class) nil)
 			    props)
