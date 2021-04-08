@@ -251,7 +251,7 @@ Example:
 			   ,inline-src))
 		  inline-modes))
 	 (base-quote '((padding-left . "5px") (margin-left . "10px")
-		       (margin-top . "20px") (margin-bottom . "0")
+		       (margin-top . "10px") (margin-bottom . "0")
 		       (font-style . "italic") (background . "#f9f9f9")))
 	 (quote-palette '("#324e72" "#6a3a4c" "#7a4900" "#ff34ff"
 			  "#ff4a46" "#008941" "#006fa6" "#a30059"
