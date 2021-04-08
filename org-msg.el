@@ -423,7 +423,18 @@ file."
 		   (when value
 		     (format "%s: %s<br>\n"
 			     (capitalize (substring (symbol-name (car f)) 1))
-			     value)))))
+			     value))))
+	       (get-charset (xml)
+		 (when (eq 'meta (car xml))
+		   (let ((attr (cadr xml)))
+		     (cond ((string= (downcase (alist-get 'http-equiv attr ""))
+				     "content-type")
+			    (let ((c (alist-get 'content attr)))
+			      (when (string-match "charset=\\([a-z0-9-]+\\)" c)
+				(throw 'found (match-string 1 c)))))
+			   ((alist-get 'charset attr)
+			    (throw 'found (alist-get 'charset attr))))))))
+
       (with-temp-buffer
 	(save-excursion
 	  (insert html))
@@ -447,6 +458,13 @@ file."
 			       (:date . message-make-date))
 			     "")
 		  "</div>\n<hr>\n"))
+	;; Save the HTML file with the appropriate coding system
+	(let* ((xml (libxml-parse-html-region (point-min) (point-max)))
+	       (charset (catch 'found (org-msg-xml-walk xml #'get-charset))))
+	  (when charset
+	    (let ((coding (intern (downcase charset))))
+	      (when (coding-system-p coding)
+		(setq save-buffer-coding-system coding)))))
 	(write-file file))
       (list file))))
 
