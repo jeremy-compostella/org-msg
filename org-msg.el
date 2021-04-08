@@ -606,8 +606,8 @@ selectors on class `org-msg-reply-header-class', it sets the
 style mailto anchor link style appropriately."
   (with-temp-buffer
     (insert str)
-    (let ((name-regexp "\\\([a-zA-Z\"][0-9a-zA-Z ,\"\(\)@\./\-]+\\\)")
-	  (mail-regexp "<\\\([A-Za-z0-9@\.]+\\\)>")
+    (let ((name-regexp "\\([[:alpha:]\"][[:alnum:] ,\"()@./-]+\\)")
+	  (mail-regexp "<\\([A-Za-z0-9@.]+\\)>")
 	  (cursor (goto-char (point-min)))
 	  (style (org-msg-build-style 'a org-msg-reply-header-class css))
 	  (res))
