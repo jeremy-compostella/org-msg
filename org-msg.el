@@ -420,7 +420,7 @@ file."
 	       (field2str (f)
 		 (let ((value (funcall (cdr f)
 				       (mu4e-message-field msg (car f)))))
-		   (when value
+		   (when (and value (not (string-empty-p value)))
 		     (format "%s: %s<br>\n"
 			     (capitalize (substring (symbol-name (car f)) 1))
 			     value))))
