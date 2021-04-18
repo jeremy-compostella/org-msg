@@ -1400,6 +1400,8 @@ Type \\[org-msg-attach] to call the dispatcher for attachment
   (add-hook 'message-send-hook 'org-msg-prepare-to-send nil t)
   (add-hook 'message-sent-hook 'undo t t)
   (add-hook 'completion-at-point-functions 'message-completion-function nil t)
+  (cond ((message-mail-alias-type-p 'abbrev) (mail-abbrevs-setup))
+	((message-mail-alias-type-p 'ecomplete) (ecomplete-setup)))
   (setq org-font-lock-keywords
 	(append org-font-lock-keywords gnus-message-citation-keywords
 		message-font-lock-keywords org-msg-font-lock-keywords))
