@@ -561,23 +561,23 @@ See `org-msg-css-to-list'."
       (eq 'org-quote face))))
 
 (defun org-msg-ascii-blockquote (level begin end)
-  "Recursively convert lines matching the `^>+ ' regular
+  "Recursively convert lines matching the `^ ?>+ ' regular
 expression into multi-level quote blocks."
   (let ((suffix (format "quote%d\n" level)))
     (goto-char begin)
-    (while (re-search-forward "^>+ " end t)
+    (while (re-search-forward "^ ?>+ " end t)
       (if (and (= level 0) (org-msg-in-quote-block))
 	  (org-msg-ascii-blockquote (1+ level) begin end)
 	(unless (org-in-src-block-p)
 	  (goto-char (line-beginning-position))
 	  (let ((new-begin (point-marker)))
 	    (insert "#+begin_" suffix)
-	    (when (re-search-forward "^[^>]" end t)
+	    (when (re-search-forward "^\\([^ >]\\| [^>]\\)" end t)
 	      (goto-char (line-beginning-position))
 	      (insert "#+end_" suffix)
 	      (let ((new-end (point-marker)))
 		(goto-char new-begin)
-		(while (re-search-forward "^>" new-end t)
+		(while (re-search-forward "^ ?>" new-end t)
 		  (replace-match "")
 		  (forward-char 1))
 		(org-msg-ascii-blockquote (1+ level) new-begin new-end)))))))))
