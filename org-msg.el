@@ -608,7 +608,7 @@ style mailto anchor link style appropriately."
   (with-temp-buffer
     (insert str)
     (let ((name-regexp "\\([[:alpha:]\"][[:alnum:] ,\"()@./-]+\\)")
-	  (mail-regexp "<\\([A-Za-z0-9@.]+\\)>")
+	  (mail-regexp "<\\([A-Za-z0-9@.-]+\\)>")
 	  (cursor (goto-char (point-min)))
 	  (style (org-msg-build-style 'a org-msg-reply-header-class css))
 	  (res))
