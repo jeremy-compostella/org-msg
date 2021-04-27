@@ -376,7 +376,7 @@ HTML export engine."
   "Supported Mail User Agents."
   :type '(alist :value-type string))
 
-(defun org-msg-dnd-handle-file (uri action)
+(defun org-msg-dnd-handle-file (uri _action)
   "Attach a file to the current draft.
 URI is the file to handle, ACTION is one of copy, move, link or
 ask."
@@ -757,12 +757,12 @@ and include the SVG content into the email XML tree."
     (insert-file-contents file)
     (org-msg-html-buffer-to-xml (file-name-directory file))))
 
-(defun org-msg--html-quote-block (quote-block contents _info)
+(defun org-msg--html-quote-block (quote-block contents info)
   (let ((cur (car (org-element-property :attr_html quote-block))))
     (unless (and cur (string-match-p ":class " cur))
       (let ((attr (concat ":class quote0" (when cur " ") cur)))
 	(org-element-put-property quote-block :attr_html (list attr)))))
-  (org-html-quote-block quote-block contents _info))
+  (org-html-quote-block quote-block contents info))
 
 (defun org-msg--html-special-block (special-block contents info)
   "Similar to `org-html-special-block' but treat specially the
@@ -1179,10 +1179,10 @@ MML tags."
 	  (org-msg-edit-mode))
 	(set-buffer-modified-p nil)))))
 
-(defun org-msg-post-setup--if-not-reply (&rest _args)
+(defun org-msg-post-setup--if-not-reply (&rest args)
   "Helper for new mail setup vs reply in notmuch"
   (unless (org-msg-message-fetch-field "subject")
-    (org-msg-post-setup _args)))
+    (org-msg-post-setup args)))
 
 (defalias 'org-msg-send-and-exit-notmuch 'notmuch-mua-send-and-exit)
 
