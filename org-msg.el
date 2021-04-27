@@ -737,7 +737,7 @@ and include the SVG content into the email XML tree."
 		  (let ((file (get-file-path (assoc-default 'data (cadr xml)))))
 		    (when file
 		      (let ((svg (with-temp-buffer
-				   (insert-file file)
+				   (insert-file-contents file)
 				   (when (search-forward "<svg " nil t)
 				     (libxml-parse-xml-region (match-beginning 0)
 							      (point-max))))))
