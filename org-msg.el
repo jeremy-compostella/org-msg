@@ -1132,6 +1132,18 @@ a html mime part, it returns t, nil otherwise."
     (or (> (length mml) 1)
 	(not (string= (alist-get 'type (car mml)) "text/plain")))))
 
+(defun org-msg-get-alternatives (type)
+  "Return the alternatives list for TYPE.
+TYPE is a one of the keys of `org-msg-default-alternatives'.
+
+This function can be advised if a more subtle behavior is needed
+such as always use a particular alternatives list when replying
+to a particular mail address."
+  (cond ((listp (car org-msg-default-alternatives))
+	 (alist-get type org-msg-default-alternatives))
+	((eq type 'reply-to-text) nil)
+	(org-msg-default-alternatives)))
+
 (defun org-msg-post-setup (&rest _args)
   "Transform the current `message' buffer into a OrgMsg buffer.
 If the current `message' buffer is a reply, the
@@ -1146,10 +1158,7 @@ MML tags."
 		       ((org-msg-mua-call 'article-htmlp) 'reply-to-html)
 		       ('reply-to-text)))
 	   (alternatives (unless (eq type 'mml)
-			   (cond ((listp (car org-msg-default-alternatives))
-				  (alist-get type org-msg-default-alternatives))
-				 ((eq type 'reply-to-text) nil)
-				 (org-msg-default-alternatives))))
+			   (org-msg-get-alternatives type)))
 	   (reply-to (when (and alternatives (eq type 'reply-to-html))
 		       (org-msg-mua-call 'save-article-for-reply))))
       (when alternatives
