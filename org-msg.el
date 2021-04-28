@@ -167,10 +167,22 @@ The export function takes an `org-msg' message buffer string and
 returns the exported content as a string."
   :type '(list (const symbol (cons string symbol))))
 
-(defcustom org-msg-default-alternatives '(html)
-  "List of alternative MIME formats to send.
-Available exporters are present in `org-msg-alternative-exporters'"
-  :type '(list symbol))
+(defcustom org-msg-default-alternatives '((new . (html))
+					  (reply-to-html . (html)))
+  "Alternative MIME formats to send.
+This customization variable orderly lists the alternatives of an
+outgoing email. The possible keys are:
+- `new' for new email is not a reply
+- `reply-to-text' when the email being replied to is plain text
+- `reply-to-html' when the email being replied to is html
+
+When set to a simple list of alternatives and for backward
+compatibility it applies to new emails and replies to html emails
+but not to replies to plain text emails.
+
+Available alternatives are listed in `org-msg-alternative-exporters'."
+  :type '(choice (list symbol)
+		 (list (alist symbol (list symbol)))))
 
 (defcustom org-msg-greeting-fmt nil
   "Mail greeting format.
@@ -794,9 +806,12 @@ absolute paths."
   (with-temp-buffer
     (insert str)
     (cl-letf (((symbol-function #'fill-region) #'ignore))
-      (let ((org-ascii-inner-margin 0))
+      (let ((org-ascii-inner-margin 0)
+	    (files '()))
 	(with-current-buffer (org-ascii-export-as-ascii)
-	  (buffer-string))))))
+	  (while (re-search-forward "<file:\\\([a-z0-9AZ_\./-]+\\\)>" nil t)
+	    (setf files (push (match-string-no-properties 1) files)))
+	  (cl-values (buffer-string) files))))))
 
 (defun org-msg-export-as-html (str)
   "Transform the Org STR into html."
@@ -884,7 +899,7 @@ browser.  With the prefix argument ARG set, it calls
 other alternatives, it displays the exported result in a buffer."
   (interactive "P")
   (let* ((preferred (last (org-msg-get-prop "alternatives")))
-	 (alt (car (org-msg-build-alternatives preferred))))
+	 (alt (caar (org-msg-build-alternatives preferred))))
     (cond ((string= (car alt) "text/html")
 	   (save-window-excursion
 	     (let ((browse-url-browser-function (if arg
@@ -903,19 +918,20 @@ other alternatives, it displays the exported result in a buffer."
 
 (defun org-msg-build-alternatives (alternatives)
   "Build the contents of the current Org-msg buffer for each of the ALTERNATIVES."
-  ;; Verify that all exporters are actually available
-  (let ((available (mapcar #'car org-msg-alternative-exporters))
-        (str (buffer-substring (org-msg-start) (org-msg-end))))
-    (dolist (alt alternatives)
-      (unless (memq alt available)
-        (error "%s is not a valid alternative, must be one of %s"
-               alt available)))
-    ;; Build the contents of each alternative
-    (mapcar (lambda (alt)
-              (let ((exporter (cdr (assq alt org-msg-alternative-exporters))))
-                (cons (car exporter)
-                      (funcall (cdr exporter) str))))
-            alternatives)))
+  (let ((str (buffer-substring (org-msg-start) (org-msg-end)))
+	(files '()))
+    (cl-flet ((export (alt)
+	       (let ((exporter (cdr (assq alt org-msg-alternative-exporters))))
+		 (unless exporter
+		   (error "%s is not a valid alternative, must be one of %s"
+			  alt (mapcar #'car org-msg-alternative-exporters)))
+		 (let ((exported (funcall (cdr exporter) str))
+		       (exp-files '()))
+		   (when (listp exported)
+		     (cl-multiple-value-setq (exported exp-files) exported))
+		   (setf files (append files exp-files))
+		   (cons (car exporter) exported)))))
+      (cl-values (mapcar #'export alternatives) files))))
 
 (defun org-msg-prepare-to-send ()
   "Convert the current OrgMsg buffer into `mml' content.
@@ -925,16 +941,22 @@ This function is a hook for `message-send-hook'."
       (if (get-text-property (org-msg-start) 'mml)
           (message "Warning: org-msg: %S is already a MML buffer" (current-buffer))
         (let ((alternatives (org-msg-get-prop "alternatives"))
-              (attachments (org-msg-get-prop "attachment")))
+              (attachments '()))
+	  (cl-multiple-value-setq (org-msg-alternatives attachments)
+	      (org-msg-build-alternatives alternatives))
+	  (when (memq 'html alternatives)
+	    (cl-flet ((is-image-but-svg (file)
+		       (string-match-p "image/\\([^s]\\|s[^v]\\|sv[^g]\\)"
+				       (org-msg-file-mime-type file))))
+	      (setf attachments (cl-delete-if #'is-image-but-svg attachments))))
+	  (setf attachments (cl-union (org-msg-get-prop "attachment")
+				      attachments))
           ;; Verify all attachments exist
           (dolist (file attachments)
             (unless (file-exists-p file)
               (error "File '%s' does not exist" file)))
           ;; Set temporary global variable with attachment list
           (setq org-msg-attachment attachments)
-          ;; Generate contents of alternatives and save globally
-          (setq org-msg-alternatives
-                (org-msg-build-alternatives alternatives))
           ;; Clear the contents of the message
           (goto-char (org-msg-start))
           (delete-region (org-msg-start) (point-max))
@@ -1077,14 +1099,13 @@ used to automatically greet the right name, see
 	      (mapconcat #'recipient2name recipients ", "))
 	  "")))))
 
-(defun org-msg-header (reply-to)
+(defun org-msg-header (reply-to alternatives)
   "Build the Org OPTIONS and PROPERTIES blocks.
 REPLY-TO is the file path of the original email export in HTML."
   (concat (format "#+OPTIONS: %s d:nil\n#+STARTUP: %s\n"
 		  (or org-msg-options "") (or org-msg-startup ""))
 	  (format ":PROPERTIES:\n:reply-to: %S\n:attachment: nil\n:alternatives: %s\n:END:\n"
-		  reply-to
-                  org-msg-default-alternatives)))
+		  reply-to alternatives)))
 
 (defun org-msg-article-htmlp-gnus ()
   "Return t if the current gnus article is HTML article.
@@ -1112,19 +1133,24 @@ If the current `message' buffer is a reply, the
 area."
   (unless (eq major-mode 'org-msg-edit-mode)
     (message-goto-body)
-    (let ((new (not (org-msg-message-fetch-field "subject")))
-	  (reply-to))
-      (when (or new (org-msg-mua-call 'article-htmlp))
-	(unless new
-	  (setq reply-to (org-msg-mua-call 'save-article-for-reply)))
-	(insert (org-msg-header reply-to))
+    (let* ((type (cond ((not (org-msg-message-fetch-field "subject")) 'new)
+		       ((org-msg-mua-call 'article-htmlp) 'reply-to-html)
+		       ('reply-to-text)))
+	   (alternatives (cond ((listp (car org-msg-default-alternatives))
+				(alist-get type org-msg-default-alternatives))
+			       ((eq type 'reply-to-text) nil)
+			       (org-msg-default-alternatives)))
+	   (reply-to (when (and alternatives (eq type 'reply-to-html))
+		       (org-msg-mua-call 'save-article-for-reply))))
+      (when alternatives
+	(insert (org-msg-header reply-to alternatives))
 	(when org-msg-greeting-fmt
 	  (insert (format org-msg-greeting-fmt
-			  (if new
+			  (if (eq type 'new)
 			      ""
 			    (org-msg-get-to-name)))))
 	(save-excursion
-	  (unless new
+	  (when (eq type 'reply-to-html)
 	    (save-excursion
 	      (insert "\n\n" org-msg-separator "\n")
 	      (delete-region (line-beginning-position) (1+ (line-end-position)))
@@ -1134,6 +1160,8 @@ area."
 		    (replace-match (cdr rep)))))
 	      (org-escape-code-in-region (point) (point-max))))
 	  (when org-msg-signature
+	    (when (eq type 'reply-to-text)
+	      (goto-char (point-max)))
 	    (insert org-msg-signature))
 	  (if (org-msg-message-fetch-field "to")
 	      (org-msg-goto-body)

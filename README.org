@@ -4,7 +4,7 @@
 
 * Presentation
 
-Not that I really like the Outlook email style but in a work environment dominated by this software, it is good to be able to reply with the same style.  By default, if the original message is in text form *OrgMsg* keeps it that way and does not activate itself.  It allows to reply to developer mailing list (or any real technical people who knows how to handle text email) seamlessly.  If the original message is in the HTML form, it activates the *OrgMsg* mode on the reply buffer.
+Not that I really like the Outlook email style but in a work environment dominated by this email client, it is good to be able to reply with the same style.  By default, if the original message is in plain text *OrgMsg* keeps it that way and does not activate itself.  It allows to reply to developer mailing list (or any real technical people who knows how to handle text email) seamlessly. This behavior can customized as documented in the [[README.org#Configuration][Configuration]] section below. If the original message is in the HTML form, it activates the *OrgMsg* mode on the reply buffer.
 
 *OrgMsg* provides a ~org-msg-edit-mode~ which is an derivation of [[https://orgmode.org/][Org mode]] in which some functionality of the current Mail User Agent ([[https://www.gnu.org/software/emacs/manual/html_mono/message.html][Message mode]], [[https://www.djcbsoftware.nl/code/mu/mu4e/][mu4e mode]], or [[https://notmuchmail.org/notmuch-emacs/][notmuch mode]]) are imported or replicated. For instance, a *OrgMsg* buffer uses the same ~font-lock-keywords~ than [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][Message mode]] or the ~TAB~ key while the cursor is in the header calls the ~message-tab~ function.
 
@@ -48,7 +48,9 @@ The following is my configuration which you can use as an example.
 	org-msg-greeting-fmt "\nHi *%s*,\n\n"
 	org-msg-recipient-names '(("jeremy.compostella@gmail.com" . "Jérémy"))
 	org-msg-greeting-name-limit 3
-	org-msg-default-alternatives '(text html)
+	org-msg-default-alternatives '((new		. (text html))
+				       (reply-to-html	. (text html))
+				       (reply-to-text	. (text)))
 	org-msg-convert-citation t
 	org-msg-signature "
 
@@ -63,9 +65,18 @@ The following is my configuration which you can use as an example.
 
 The ~org-msg-greeting-fmt~ can be customized to configure the default greeting message.  If this format contains a ~%s~ token it is automatically replaced with the name of the person you are replying to.  The name is either the recipient name specified in the ~org-msg-recipient-names~ list or the first name automatically extracted from the email address. If ~org-msg-greeting-fmt-mailto~ is t, the name is formatted as mailto link.
 
-The types of MIME alternatives that are sent can be modified by editing the ~:alternatives:~ property on each message. For example, setting this property to ~(html text)~ will send both text and HTML alternatives to your message, whereas ~(html)~ or ~(text)~ will just send HTML or plain text respectively. The default value of ~:alternatives:~ can be set with ~org-msg-default-alternatives~. If you want to add your own custom exporters, this can be done by modifying ~org-msg-alternative-exporters~.
+The types of MIME alternatives that are sent can be modified by editing the ~:alternatives:~ property on each message. For example, setting this property to ~(text html)~ will send both text and HTML alternatives to your message, whereas ~(html)~ or ~(text)~ will just send HTML or plain text respectively.
 
-Alternatives listed in ~org-msg-default-alternatives~ should be placed in increasing order of preference to meet [[https://www.w3.org/Protocols/rfc1341/7_2_Multipart.html][RFC-1341]] *section 7.2.3* guidelines.
+The default value of the ~:alternatives:~ property can be set with the
+~org-msg-default-alternatives~ customization variable. It is associative list which value is a list of alternatives and the key is one of the following:
+- ~new~ for a new email
+- ~reply-to-html~ for a reply to an HTML email
+- ~reply-to-text~ for a reply to a plain text email
+If one of these keys is not present *OrgMsg* does not activate for this type of email.
+
+If you want to add your own custom exporters, this can be done by modifying ~org-msg-alternative-exporters~.
+
+Alternatives list should be placed in increasing order of preference to meet [[https://www.w3.org/Protocols/rfc1341/7_2_Multipart.html][RFC-1341]] *section 7.2.3* guidelines.
 
 In order to avoid CSS conflict, *OrgMsg* performs inline replacement when it generates the final HTML message.  See the ~org-msg-enforce-css~ variable to customize the style (and the default ~org-msg-default-style~ variable for reference).
 
