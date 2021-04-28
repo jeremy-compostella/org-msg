@@ -1101,7 +1101,7 @@ used to automatically greet the right name, see
 	    (let ((recipients (mail-extract-address-components to t)))
 	      (when org-msg-greeting-name-limit
 		(setf recipients (seq-take recipients org-msg-greeting-name-limit)))
-	      (mapconcat #'recipient2name recipients ", "))
+	      (string-join (delq nil (mapcar #'recipient2name recipients)) ", "))
 	  "")))))
 
 (defun org-msg-header (reply-to alternatives)
