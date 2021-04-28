@@ -1126,20 +1126,30 @@ a html mime part, it returns t, nil otherwise."
   ;; Seems like never the case for notmuch but we want to use org-msg
   t)
 
+(defun org-msg-has-mml-tags ()
+  "Return t if the current buffer contains MML tags."
+  (let ((mml (mml-parse)))
+    (or (> (length mml) 1)
+	(not (string= (alist-get 'type (car mml)) "text/plain")))))
+
 (defun org-msg-post-setup (&rest _args)
   "Transform the current `message' buffer into a OrgMsg buffer.
 If the current `message' buffer is a reply, the
 `org-msg-separator' string is inserted at the end of the editing
-area."
+area. If the current buffer contains MML tags,
+`org-msg-edit-mode' is not activated as OrgMsg does not support
+MML tags."
   (unless (eq major-mode 'org-msg-edit-mode)
     (message-goto-body)
     (let* ((type (cond ((not (org-msg-message-fetch-field "subject")) 'new)
+		       ((org-msg-has-mml-tags) 'mml)
 		       ((org-msg-mua-call 'article-htmlp) 'reply-to-html)
 		       ('reply-to-text)))
-	   (alternatives (cond ((listp (car org-msg-default-alternatives))
-				(alist-get type org-msg-default-alternatives))
-			       ((eq type 'reply-to-text) nil)
-			       (org-msg-default-alternatives)))
+	   (alternatives (unless (eq type 'mml)
+			   (cond ((listp (car org-msg-default-alternatives))
+				  (alist-get type org-msg-default-alternatives))
+				 ((eq type 'reply-to-text) nil)
+				 (org-msg-default-alternatives))))
 	   (reply-to (when (and alternatives (eq type 'reply-to-html))
 		       (org-msg-mua-call 'save-article-for-reply))))
       (when alternatives
