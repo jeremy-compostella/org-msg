@@ -226,6 +226,11 @@ Example:
 \"\n\nRegards,\n\n#+begin_signature\n-- *Your name*\n#+end_signature\""
   :type '(string))
 
+(defcustom org-msg-posting-style 'top-posting
+  "Define the posting style for HTML replies.
+Can be either `top-posting' or nil."
+  :type '(symbol))
+
 (defcustom org-msg-dnd-protocol-alist
   '(("^file:" . org-msg-dnd-handle-file))
   "The functions to call when a file drop is made."
@@ -1159,7 +1164,9 @@ MML tags."
 		       ('reply-to-text)))
 	   (alternatives (unless (eq type 'mml)
 			   (org-msg-get-alternatives type)))
-	   (reply-to (when (and alternatives (eq type 'reply-to-html))
+	   (style (when (eq type 'reply-to-html)
+		    org-msg-posting-style))
+	   (reply-to (when (and (eq style 'top-posting) alternatives)
 		       (org-msg-mua-call 'save-article-for-reply))))
       (when alternatives
 	(insert (org-msg-header reply-to alternatives))
@@ -1169,7 +1176,7 @@ MML tags."
 			      ""
 			    (org-msg-get-to-name)))))
 	(save-excursion
-	  (when (eq type 'reply-to-html)
+	  (when (eq style 'top-posting)
 	    (save-excursion
 	      (insert "\n\n" org-msg-separator "\n")
 	      (delete-region (line-beginning-position) (1+ (line-end-position)))
@@ -1179,7 +1186,7 @@ MML tags."
 		    (replace-match (cdr rep)))))
 	      (org-escape-code-in-region (point) (point-max))))
 	  (when org-msg-signature
-	    (when (eq type 'reply-to-text)
+	    (unless (eq style 'top-posting)
 	      (goto-char (point-max)))
 	    (insert org-msg-signature))
 	  (if (org-msg-message-fetch-field "to")
