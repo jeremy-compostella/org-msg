@@ -160,7 +160,7 @@ It is used by function advice.")
 (defcustom org-msg-alternative-exporters
   `((text . ("text/plain" . ,(apply-partially 'org-msg-export-as-text 'ascii)))
     (utf-8 . ("text/plain" . ,(apply-partially 'org-msg-export-as-text 'utf-8)))
-    (org . ("text/plain" . identity))
+    (org . ("text/x-org" . identity))
     (html . ("text/html" . org-msg-export-as-html)))
   "Alist of the available alternative exporters.
 Entries are in the form of `(tag . (mime-part . export-function))'.
