@@ -158,7 +158,8 @@ It is used by function advice.")
   :type '(string))
 
 (defcustom org-msg-alternative-exporters
-  '((text . ("text/plain" . org-msg-export-as-text))
+  `((text . ("text/plain" . ,(apply-partially 'org-msg-export-as-text 'ascii)))
+    (utf-8 . ("text/plain" . ,(apply-partially 'org-msg-export-as-text 'utf-8)))
     (org . ("text/plain" . identity))
     (html . ("text/html" . org-msg-export-as-html)))
   "Alist of the available alternative exporters.
@@ -806,12 +807,13 @@ absolute paths."
 	      (kill-buffer)
 	      xml)))))))
 
-(defun org-msg-export-as-text (str)
+(defun org-msg-export-as-text (charset str)
   "Transform the Org STR into a plain text."
   (with-temp-buffer
     (insert str)
     (cl-letf (((symbol-function #'fill-region) #'ignore))
-      (let ((org-ascii-inner-margin 0)
+      (let ((org-ascii-charset charset)
+	    (org-ascii-inner-margin 0)
 	    (files '()))
 	(with-current-buffer (org-ascii-export-as-ascii)
 	  (while (re-search-forward "<file:\\\([a-z0-9AZ_\./-]+\\\)>" nil t)
