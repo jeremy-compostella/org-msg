@@ -1064,6 +1064,28 @@ to a particular mail address."
 	((eq type 'reply-to-text) nil)
 	(org-msg-default-alternatives)))
 
+(defun org-msg-composition-parameters (type alternatives)
+  "Return the posting-style, greeting format and signature.
+TYPE is a one of the keys of `org-msg-default-alternatives'.
+ALTERNATIVES is a list of alternative symbols included as defined
+in `org-msg-alternative-exporters'.
+
+This function returns the value of the `org-msg-posting-style',
+`org-msg-greeting-fmt' and `org-msg-posting-style' customization
+variables as an association list with `style', `greeting-fmt' and
+`signature' as their respective keys. The goal of this function
+is to offer a anchor point for advanced configuration: it can be
+advised to implement more complex behaviors such as change the
+signature and posting style when replying to a particular mail
+address or tweak the signature when replying with plain text
+email."
+  `((style . ,(when (and (eq type 'reply-to-html)
+			 (memq 'html alternatives)
+			 (not (= (point) (point-max))))
+		org-msg-posting-style))
+    (greeting-fmt . ,org-msg-greeting-fmt)
+    (signature . ,org-msg-signature)))
+
 (defun org-msg-post-setup (&rest _args)
   "Transform the current `message' buffer into a OrgMsg buffer.
 If the current `message' buffer is a reply, the
@@ -1078,39 +1100,36 @@ MML tags."
 		       ((org-msg-mua-call 'article-htmlp) 'reply-to-html)
 		       ('reply-to-text)))
 	   (alternatives (unless (eq type 'mml)
-			   (org-msg-get-alternatives type)))
-	   (style (when (and (eq type 'reply-to-html)
-			     (memq 'html alternatives)
-			     (not (= (point) (point-max))))
-		    org-msg-posting-style))
-	   (reply-to (when (and (eq style 'top-posting) alternatives)
-		       (org-msg-mua-call 'save-article-for-reply))))
+			   (org-msg-get-alternatives type))))
       (when alternatives
-	(insert (org-msg-header reply-to alternatives))
-	(when org-msg-greeting-fmt
-	  (insert (format org-msg-greeting-fmt
-			  (if (eq type 'new)
-			      ""
-			    (org-msg-get-to-name)))))
-	(save-excursion
-	  (when (eq style 'top-posting)
-	    (save-excursion
-	      (insert "\n\n" org-msg-separator "\n")
-	      (delete-region (line-beginning-position) (1+ (line-end-position)))
-	      (dolist (rep '(("^>+ *" . "") ("___+" . "---")))
-		(save-excursion
-		  (while (re-search-forward (car rep) nil t)
-		    (replace-match (cdr rep)))))
-	      (org-escape-code-in-region (point) (point-max))))
-	  (when org-msg-signature
-	    (unless (eq style 'top-posting)
-	      (goto-char (point-max)))
-	    (insert org-msg-signature))
-	  (if (org-msg-message-fetch-field "to")
-	      (org-msg-goto-body)
-	    (message-goto-to))
-	  (org-msg-edit-mode))
-	(set-buffer-modified-p nil)))))
+	(let-alist (org-msg-composition-parameters type alternatives)
+	  (insert (org-msg-header (when (eq .style 'top-posting)
+				    (org-msg-mua-call 'save-article-for-reply))
+				  alternatives))
+	  (when .greeting-fmt
+	    (insert (format .greeting-fmt
+			    (if (eq type 'new)
+				""
+			      (org-msg-get-to-name)))))
+	  (save-excursion
+	    (when (eq .style 'top-posting)
+	      (save-excursion
+		(insert "\n\n" org-msg-separator "\n")
+		(delete-region (line-beginning-position) (1+ (line-end-position)))
+		(dolist (rep '(("^>+ *" . "") ("___+" . "---")))
+		  (save-excursion
+		    (while (re-search-forward (car rep) nil t)
+		      (replace-match (cdr rep)))))
+		(org-escape-code-in-region (point) (point-max))))
+	    (when .signature
+	      (unless (eq .style 'top-posting)
+		(goto-char (point-max)))
+	      (insert .signature))
+	    (if (org-msg-message-fetch-field "to")
+		(org-msg-goto-body)
+	      (message-goto-to))
+	    (org-msg-edit-mode))
+	  (set-buffer-modified-p nil))))))
 
 (defun org-msg-post-setup--if-not-reply (&rest args)
   "Helper for new mail setup vs reply in notmuch"

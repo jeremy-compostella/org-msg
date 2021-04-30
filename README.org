@@ -57,7 +57,8 @@ The following is my configuration which you can use as an example.
   Regards,
 
   ,#+begin_signature
-  -- *Jeremy* \\\\
+  --
+  ,*Jeremy*
   /One Emacs to rule them all/
   ,#+end_signature")
   (org-msg-mode)
@@ -83,6 +84,31 @@ Alternatives list should be placed in increasing order of preference to meet [[h
 In order to avoid CSS conflict, *OrgMsg* performs inline replacement when it generates the final HTML message.  See the ~org-msg-enforce-css~ variable to customize the style (and the default ~org-msg-default-style~ variable for reference).
 
 Setting the org export option ~tex:dvipng~ or ~tex:dvisvgm~ is handeled correctly by this mode by producing inline images or inlining the generated SVG. Note that most mailclients however sadly do not display SVG content in mails so it might be best to stick to settings producing images unless you know your recipient's mailclient supports SVG.
+
+** Advanced configuration
+
+It would be impossible for *OrgMsg* to offer composition customization variables to accommodate all the combinations of desirable behaviors. For instance, one could want to reply as plain text only for a certain type of email as characterized by the sender domain name or a subject prefix. Or another could want to change its signature when replying as plain text only. In addition, emails can be used to interact with machines and their protocol can have even more exotic requirements.
+
+To offer plenty of flexibility without turning *OrgMsg* into an unsustainable project, *OrgMsg* implements the two following and well documented functions. They are called at composition time by the ~org-msg-post-setup~ function with the new message as the current buffer. They can be advised by the end-user to implement any particular behavior (cf. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Advising-Functions.html][Advising Emacs Lisp Functions]]).
+- ~org-msg-get-alternatives(type)~ returns the list of alternatives
+- ~org-msg-composition-parameters (type alternatives)~ returns the posting style, greeting format and signature
+
+For example, here is how I configure *OrgMsg* to dynamically change my greeting message and signature when I reply as a plain text.
+
+#+begin_src emacs-lisp
+  (defun my-org-msg-composition-parameters (orig-fun &rest args)
+    "Tweak my greeting message and my signature when replying as
+    plain/text only."
+    (let ((res (apply orig-fun args)))
+      (when (equal (cadr args) '(text))
+	(setf (alist-get 'greeting-fmt res) "\n")
+	(setf (alist-get 'signature res)
+	      (replace-regexp-in-string "\\([\*/]\\|\nRegards,\n\n\\)" ""
+					org-msg-signature)))
+      res))
+  (advice-add 'org-msg-composition-parameters
+	      :around #'my-org-msg-composition-parameters)
+#+end_src
 
 * Quotes
 
