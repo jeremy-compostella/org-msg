@@ -1135,7 +1135,8 @@ address or tweak the signature when replying with plain text
 email."
   `((style . ,(when (and (eq type 'reply-to-html)
 			 (memq 'html alternatives)
-			 (not (= (point) (point-max))))
+			 (not (= (point) (point-max)))
+			 (not (org-msg-has-mml-tags)))
 		org-msg-posting-style))
     (greeting-fmt . ,org-msg-greeting-fmt)
     (signature . ,org-msg-signature)))
@@ -1150,11 +1151,9 @@ MML tags."
   (unless (eq major-mode 'org-msg-edit-mode)
     (message-goto-body)
     (let* ((type (cond ((not (org-msg-message-fetch-field "subject")) 'new)
-		       ((org-msg-has-mml-tags) 'mml)
 		       ((org-msg-mua-call 'article-htmlp) 'reply-to-html)
 		       ('reply-to-text)))
-	   (alternatives (unless (eq type 'mml)
-			   (org-msg-get-alternatives type))))
+	   (alternatives (org-msg-get-alternatives type)))
       (when alternatives
 	(let-alist (org-msg-composition-parameters type alternatives)
 	  (insert (org-msg-header (when (eq .style 'top-posting)
