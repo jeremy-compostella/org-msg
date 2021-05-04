@@ -61,6 +61,11 @@
   "Internal use only.
 It is used by function advice.")
 
+(defvar-local org-msg-mml-buffer-list '()
+  "Used to store the `mml-buffer-list' variable content of the
+current message. `mml-buffer-list' is the list of temporary
+buffer holding mml contents.")
+
 (defcustom org-msg-separator "--citation follows this line (read-only)--"
   "String separating the reply area and the original mail."
   :type '(string))
@@ -1279,13 +1284,25 @@ d       Delete one attachment, you will be prompted for a file name."))
     (dolist (file files)
       (when (and (not (string= "" file)) (file-exists-p file))
 	(cond ((file-directory-p file) (delete-directory file t))
-	      ((delete-file file)))))))
+	      ((delete-file file)))))
+    (when org-msg-mml-buffer-list
+      (let ((mml-buffer-list org-msg-mml-buffer-list))
+	(mml-destroy-buffers)))))
+
+(defun org-msg-store-mml-buffers ()
+  "Locally store the list of MML temporary buffers."
+  (when mml-buffer-list
+    (setq org-msg-mml-buffer-list mml-buffer-list
+	  mml-buffer-list nil)))
 
 (defun org-msg-mode-gnus ()
   "Setup the hook for gnus mail user agent."
   (if org-msg-mode
-      (add-hook 'gnus-message-setup-hook 'org-msg-post-setup)
-    (remove-hook 'gnus-message-setup-hook 'org-msg-post-setup)))
+      (progn
+	(add-hook 'gnus-message-setup-hook 'org-msg-post-setup)
+	(add-hook 'gnus-message-setup-hook 'org-msg-store-mml-buffers))
+    (remove-hook 'gnus-message-setup-hook 'org-msg-post-setup)
+    (remove-hook 'gnus-message-setup-hook 'org-msg-store-mml-buffers)))
 
 (defun org-msg-mode-mu4e ()
   "Setup the hook for mu4e mail user agent."
