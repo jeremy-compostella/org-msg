@@ -51,6 +51,9 @@
 (defvar org-msg-attachment '()
   "Temporary variable to pass the list of attachment.")
 
+(defvar org-msg-mml nil
+  "Temporary variable to pass the MML content.")
+
 (defvar org-msg-alternatives nil
   "Temporary alist to hold the contents of each alternative.")
 
@@ -819,7 +822,7 @@ browser.  With the prefix argument ARG set, it calls
 other alternatives, it displays the exported result in a buffer."
   (interactive "P")
   (let* ((preferred (last (org-msg-get-prop "alternatives")))
-	 (alt (caar (org-msg-build-alternatives preferred))))
+	 (alt (caar (org-msg-build-alternatives preferred t))))
     (cond ((string= (car alt) "text/html")
 	   (save-window-excursion
 	     (let ((browse-url-browser-function (if arg
@@ -836,22 +839,61 @@ other alternatives, it displays the exported result in a buffer."
 	       (insert (cdr alt)))
 	     (display-buffer (current-buffer))))))
 
-(defun org-msg-build-alternatives (alternatives)
-  "Build the contents of the current Org-msg buffer for each of the ALTERNATIVES."
-  (let ((str (buffer-substring (org-msg-start) (org-msg-end)))
-	(files '()))
+(defun org-msg-separate-mml-and-org (&optional preserve)
+  "Separate the Org Mode and the MML content of the current buffer.
+Returns the MML content and the Org Mode content as a list of two
+strings. If PRESERVE is nil, the MML content is removed from the
+buffer otherwise, the buffer is left untouched."
+  (let ((buf (current-buffer))
+	mml org)
+    (when preserve
+      (setf buf (generate-new-buffer " *temp*"))
+      (copy-to-buffer buf (point-min) (org-msg-end)))
+    (with-current-buffer buf
+      (goto-char (point-min))
+      (let (stack res)
+	(while (re-search-forward "<#\\\(/?[a-z]+\\\)[ >]" nil t)
+	  (let ((tag (match-string-no-properties 1)))
+	    (unless (string= tag "secure")
+	      (if (string= (substring tag 0 1) "/")
+		  (let ((cur (pop stack)))
+		    (while (not (string= (substring tag 1) (car cur)))
+		      (setf cur (pop stack)))
+		    (unless stack
+		      (push (list (cdr cur) (line-end-position)) res)))
+		(push (cons tag (line-beginning-position)) stack)))))
+	(setf mml (mapconcat (lambda (x)
+			       (apply 'delete-and-extract-region x))
+			     res "\n"))
+	(setf org (buffer-substring (org-msg-start) (org-msg-end))))
+      (when preserve
+	(kill-buffer)))
+    (cl-values mml org)))
+
+(defun org-msg-build-alternatives (alternatives &optional preserve)
+  "Build the contents of the current Org-msg buffer for each of the ALTERNATIVES.
+If PRESERVE is t, it does not alter the content of the
+buffer (cf. `org-msg-separate-mml-and-org').
+
+Returns a list of three items:
+1. An association list of the exported alternatives
+2. A list of attachments generated during the exportation if any
+3. MML tags as a string if any"
+  (let (mml org files)
+    (cl-multiple-value-setq (mml org)
+      (org-msg-separate-mml-and-org preserve))
     (cl-flet ((export (alt)
 	       (let ((exporter (cdr (assq alt org-msg-alternative-exporters))))
 		 (unless exporter
 		   (error "%s is not a valid alternative, must be one of %s"
 			  alt (mapcar #'car org-msg-alternative-exporters)))
-		 (let ((exported (funcall (cdr exporter) str))
+		 (let ((exported (funcall (cdr exporter) org))
 		       (exp-files '()))
 		   (when (listp exported)
 		     (cl-multiple-value-setq (exported exp-files) exported))
 		   (setf files (append files exp-files))
 		   (cons (car exporter) exported)))))
-      (cl-values (mapcar #'export alternatives) files))))
+      (cl-values (mapcar #'export alternatives) files mml))))
 
 (defun org-msg-prepare-to-send ()
   "Convert the current OrgMsg buffer into `mml' content.
@@ -861,9 +903,9 @@ This function is a hook for `message-send-hook'."
       (if (get-text-property (org-msg-start) 'mml)
           (message "Warning: org-msg: %S is already a MML buffer" (current-buffer))
         (let ((alternatives (org-msg-get-prop "alternatives"))
-              (attachments '()))
-	  (cl-multiple-value-setq (org-msg-alternatives attachments)
-	      (org-msg-build-alternatives alternatives))
+              attachments mml)
+	  (cl-multiple-value-setq (org-msg-alternatives attachments mml)
+	    (org-msg-build-alternatives alternatives))
 	  (when (memq 'html alternatives)
 	    (cl-flet ((is-image-but-svg (file)
 		       (string-match-p "image/\\([^s]\\|s[^v]\\|sv[^g]\\)"
@@ -875,8 +917,9 @@ This function is a hook for `message-send-hook'."
           (dolist (file attachments)
             (unless (file-exists-p file)
               (error "File '%s' does not exist" file)))
-          ;; Set temporary global variable with attachment list
-          (setq org-msg-attachment attachments)
+          ;; Set temporary global variables
+          (setq org-msg-attachment attachments
+		org-msg-mml mml)
           ;; Clear the contents of the message
           (goto-char (org-msg-start))
           (delete-region (org-msg-start) (point-max))
@@ -889,7 +932,7 @@ This function is a hook for `message-send-hook'."
           (if (or (org-msg-mml-recursive-support)
                   (not (memq 'html alternatives)))
               (progn
-                (when attachments
+                (when (or attachments mml)
                   (mml-insert-multipart "mixed"))
                 (when (> (length org-msg-alternatives) 1)
                   (mml-insert-multipart "alternative"))
@@ -901,7 +944,9 @@ This function is a hook for `message-send-hook'."
                   (forward-line))
                 (dolist (file attachments)
                   (mml-insert-tag 'part 'type (org-msg-file-mime-type file)
-                                  'filename file 'disposition "attachment")))
+                                  'filename file 'disposition "attachment"))
+		(when mml
+		  (insert mml)))
             (mml-insert-part "text/html")
             (insert (cdr (assoc "text/html" org-msg-alternatives))))
           ;; Propertise the message contents so we don't accidently run
@@ -947,10 +992,14 @@ variable set by `org-msg-prepare-to-send'."
         (setf alternative `((multipart (type . "alternative")
                                        ,@alternative))))
       ;; Combine the attachments and the resulting content part/multipart
-      (if org-msg-attachment
+      (if (or org-msg-attachment org-msg-mml)
           `(multipart (type . "mixed")
                       ,@alternative
-                      ,@newparts)
+                      ,@newparts
+		      ,@(when org-msg-mml
+			  (with-temp-buffer
+			    (insert org-msg-mml)
+			    (mml-parse))))
 	alternative))))
 
 (defun org-msg-html--todo (orig-fun todo &optional info)
