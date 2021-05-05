@@ -66,6 +66,10 @@ It is used by function advice.")
 current message. `mml-buffer-list' is the list of temporary
 buffer holding mml contents.")
 
+(defcustom org-msg-setup-on-message-mail nil
+  "When set, OrgMsg advises `message-mail' to make it followed by
+a call to `org-msg-post-setup'.")
+
 (defcustom org-msg-separator "--citation follows this line (read-only)--"
   "String separating the reply area and the original mail."
   :type '(string))
@@ -1339,7 +1343,8 @@ HTML emails."
 	  (advice-add 'mml-expand-html-into-multipart-related
 		      :around #'org-msg-mml-into-multipart-related))
 	(advice-add 'org-html--todo :around #'org-msg-html--todo)
-	(advice-add 'message-mail :after #'org-msg-post-setup)
+	(when org-msg-setup-on-message-mail
+	  (advice-add 'message-mail :after #'org-msg-post-setup))
 	(when (boundp 'bbdb-mua-mode-alist)
 	  (add-to-list 'bbdb-mua-mode-alist '(message org-msg-edit-mode))))
     (put 'message-sent-hook 'permanent-local nil)
@@ -1351,7 +1356,8 @@ HTML emails."
       (advice-remove 'mml-expand-html-into-multipart-related
 		     #'org-msg-mml-into-multipart-related))
     (advice-remove 'org-html--todo #'org-msg-html--todo)
-    (advice-remove 'message-mail #'org-msg-post-setup)
+    (when org-msg-setup-on-message-mail
+      (advice-remove 'message-mail #'org-msg-post-setup))
     (when (boundp 'bbdb-mua-mode-alist)
       (setq bbdb-mua-mode-alist (delete '(message org-msg-edit-mode)
 					bbdb-mua-mode-alist)))))
