@@ -297,7 +297,7 @@ HTML export engine."
   :type '(boolean))
 
 (defcustom org-msg-supported-mua '((gnus-user-agent . "gnus")
-				   (message-user-agent . "gnus")
+				   (message-user-agent . "message")
 				   (mu4e-user-agent . "mu4e")
 				   (notmuch-user-agent . "notmuch"))
   "Supported Mail User Agents."
@@ -1294,6 +1294,12 @@ d       Delete one attachment, you will be prompted for a file name."))
     (setq org-msg-mml-buffer-list mml-buffer-list
 	  mml-buffer-list nil)))
 
+(defun org-msg-mode-message ()
+  "Setup the advices for message mail user agent."
+  (if org-msg-mode
+      (advice-add 'message-mail :after #'org-msg-post-setup)
+    (advice-remove 'message-mail #'org-msg-post-setup)))
+
 (defun org-msg-mode-gnus ()
   "Setup the hook for gnus mail user agent."
   (if org-msg-mode
@@ -1341,7 +1347,6 @@ HTML emails."
 	  (advice-add 'mml-expand-html-into-multipart-related
 		      :around #'org-msg-mml-into-multipart-related))
 	(advice-add 'org-html--todo :around #'org-msg-html--todo)
-	(advice-add 'message-mail :after #'org-msg-post-setup)
 	(when (boundp 'bbdb-mua-mode-alist)
 	  (add-to-list 'bbdb-mua-mode-alist '(message org-msg-edit-mode))))
     (put 'message-sent-hook 'permanent-local nil)
@@ -1353,7 +1358,6 @@ HTML emails."
       (advice-remove 'mml-expand-html-into-multipart-related
 		     #'org-msg-mml-into-multipart-related))
     (advice-remove 'org-html--todo #'org-msg-html--todo)
-    (advice-remove 'message-mail #'org-msg-post-setup)
     (when (boundp 'bbdb-mua-mode-alist)
       (setq bbdb-mua-mode-alist (delete '(message org-msg-edit-mode)
 					bbdb-mua-mode-alist)))))

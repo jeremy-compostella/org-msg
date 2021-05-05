@@ -42,6 +42,7 @@ The default Emacs Mail User Agent is [[https://www.gnu.org/software/emacs/manual
 The following is my configuration which you can use as an example.
 
 #+begin_src emacs-lisp
+  (setq mail-user-agent 'gnus-user-agent)
   (require 'org-msg)
   (setq org-msg-options "html-postamble:nil H:5 num:nil ^:{} toc:nil author:nil email:nil \\n:t"
 	org-msg-startup "hidestars indent inlineimages"
