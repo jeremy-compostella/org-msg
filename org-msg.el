@@ -922,9 +922,6 @@ This function is a hook for `message-send-hook'."
           (dolist (file attachments)
             (unless (file-exists-p file)
               (error "File '%s' does not exist" file)))
-          ;; Set temporary global variables
-          (setq org-msg-attachment attachments
-		org-msg-mml mml)
           ;; Clear the contents of the message
           (goto-char (org-msg-start))
           (delete-region (org-msg-start) (point-max))
@@ -953,9 +950,12 @@ This function is a hook for `message-send-hook'."
 		(when mml
 		  (insert mml)))
             (mml-insert-part "text/html")
-            (insert (cdr (assoc "text/html" org-msg-alternatives))))
           ;; Propertise the message contents so we don't accidently run
           ;; this function on the buffer twice
+            (insert (cdr (assoc "text/html" org-msg-alternatives)))
+	    ;; Pass data to `org-msg-mml-into-multipart-related'
+            (setq org-msg-attachment attachments
+		  org-msg-mml mml))
           (add-text-properties (save-excursion (message-goto-body))
                                (point-max)
                                '(mml t)))))))
