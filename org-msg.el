@@ -925,12 +925,11 @@ This function is a hook for `message-send-hook'."
           ;; Clear the contents of the message
           (goto-char (org-msg-start))
           (delete-region (org-msg-start) (point-max))
-          ;; If mml has recursive html support (in later versions of emacs)
-          ;; we want to generate the structure of the MIME document here.
-          ;; If not we do this by manually editing the structure of the
-          ;; parsed MML tree in `org-msg-mml-into-multipart-related'. We
-          ;; also don't need to worry about this if we are only sending
-          ;; text/plain
+          ;; If mml has recursive html support (starting with Emacs 28), we want
+          ;; to generate the structure of the MIME document here.  If not we do
+          ;; this by manually editing the structure of the parsed MML tree in
+          ;; `org-msg-mml-into-multipart-related'. We also don't need to worry
+          ;; about this if we are only sending text/plain
           (if (or (org-msg-mml-recursive-support)
                   (not (memq 'html alternatives)))
               (progn
@@ -950,12 +949,12 @@ This function is a hook for `message-send-hook'."
 		(when mml
 		  (insert mml)))
             (mml-insert-part "text/html")
-          ;; Propertise the message contents so we don't accidently run
-          ;; this function on the buffer twice
             (insert (cdr (assoc "text/html" org-msg-alternatives)))
 	    ;; Pass data to `org-msg-mml-into-multipart-related'
             (setq org-msg-attachment attachments
 		  org-msg-mml mml))
+          ;; Propertise the message contents so we don't accidentally run this
+          ;; function on the buffer twice
           (add-text-properties (save-excursion (message-goto-body))
                                (point-max)
                                '(mml t)))))))
