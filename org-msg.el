@@ -416,21 +416,29 @@ file."
 	(write-file file))
       (list file))))
 
+(defmacro org-msg-with-original-notmuch-message (&rest body)
+  "Execute the forms in BODY with the replied notmuch message
+buffer temporarily current."
+  (declare (indent 0))
+  (let ((id (make-symbol "id")))
+    `(let ((,id (trim-string (org-msg-message-fetch-field "in-reply-to"))))
+       (save-window-excursion
+	 (let ((notmuch-show-only-matching-messages t))
+           (notmuch-show (format "id:%s" (substring ,id 1 -1))))
+	 (with-current-notmuch-show-message
+	  (progn ,@body))))))
+
 (defun org-msg-save-article-for-reply-notmuch ()
   "Export the currently visited notmuch article as HTML."
-  (let ((id (trim-string (org-msg-message-fetch-field "in-reply-to")))
-	header parts)
+  (let (header parts)
     (cl-flet ((get-field (field)
 	       (when-let ((value (org-msg-message-fetch-field field)))
 		 (concat (capitalize field) ": " value))))
-      (save-window-excursion
-	(let ((notmuch-show-only-matching-messages t))
-          (notmuch-show (format "id:%s" (substring id 1 -1))))
-	(with-current-notmuch-show-message
-	 (let ((fields (mapcar #'get-field
-			       '("from" "subject" "to" "cc" "date"))))
-	   (setf header (mapconcat 'identity (delq nil fields) "\n")))
-	 (setf parts (mm-dissect-buffer))))
+      (org-msg-with-original-notmuch-message
+	(let ((fields (mapcar #'get-field
+			      '("from" "subject" "to" "cc" "date"))))
+	  (setf header (mapconcat 'identity (delq nil fields) "\n")))
+	(setf parts (mm-dissect-buffer)))
       (with-temp-buffer
 	(let ((gnus-article-buffer (current-buffer))
 	      (gnus-article-mime-handles parts))
@@ -1109,24 +1117,28 @@ REPLY-TO is the file path of the original email export in HTML."
 	  (format ":PROPERTIES:\n:reply-to: %S\n:attachment: nil\n:alternatives: %s\n:END:\n"
 		  reply-to alternatives)))
 
+(defun org-msg-article-htmlp ()
+  "Return t if the current article buffer contains a text/html part."
+  (when-let ((parts (mm-dissect-buffer t t)))
+    (mm-destroy-parts parts)
+    (cl-find "text/html" (flatten-tree parts) :test 'equal)))
+
 (defun org-msg-article-htmlp-gnus ()
   "Return t if the current gnus article is HTML article.
 If the currently visited article (`gnus-article-buffer') contains
 a html mime part, it returns t, nil otherwise."
   (with-current-buffer gnus-article-buffer
     (set-buffer gnus-original-article-buffer)
-    (when-let ((parts (mm-dissect-buffer t t)))
-      (mm-destroy-parts parts)
-      (cl-find "text/html" (flatten-tree parts) :test 'equal))))
+    (org-msg-article-htmlp)))
 
 (defun org-msg-article-htmlp-mu4e ()
   "Return t if the current mu4e article is HTML article."
   (when (mu4e-message-field mu4e-compose-parent-message :body-html) t))
 
 (defun org-msg-article-htmlp-notmuch ()
-  "Return t if the current notmuch reply is an HTML article."
-  ;; Seems like never the case for notmuch but we want to use org-msg
-  t)
+  "Return t if the current notmuch article is an HTML article."
+  (org-msg-with-original-notmuch-message
+    (org-msg-article-htmlp)))
 
 (defun org-msg-has-mml-tags ()
   "Return t if the current buffer contains MML tags."
