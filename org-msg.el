@@ -1113,11 +1113,11 @@ REPLY-TO is the file path of the original email export in HTML."
   "Return t if the current gnus article is HTML article.
 If the currently visited article (`gnus-article-buffer') contains
 a html mime part, it returns t, nil otherwise."
-  (let* ((parts (with-current-buffer gnus-article-buffer
-		  (set-buffer gnus-original-article-buffer)
-		  (mm-dissect-buffer t t)))
-	 (str (format "%s" parts)))
-    (string-match-p "text/html" str)))
+  (with-current-buffer gnus-article-buffer
+    (set-buffer gnus-original-article-buffer)
+    (when-let ((parts (mm-dissect-buffer t t)))
+      (mm-destroy-parts parts)
+      (cl-find "text/html" (flatten-tree parts) :test 'equal))))
 
 (defun org-msg-article-htmlp-mu4e ()
   "Return t if the current mu4e article is HTML article."
