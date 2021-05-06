@@ -440,10 +440,11 @@ buffer temporarily current."
 	  (setf header (mapconcat 'identity (delq nil fields) "\n")))
 	(setf parts (mm-dissect-buffer)))
       (with-temp-buffer
-	(let ((gnus-article-buffer (current-buffer))
-	      (gnus-article-mime-handles parts))
-	  (org-msg-save-article-for-reply-gnus parts header)))
-      (mm-destroy-parts parts))))
+	(let* ((gnus-article-buffer (current-buffer))
+	       (gnus-article-mime-handles parts)
+	       (temp (org-msg-save-article-for-reply-gnus parts header)))
+	  (mm-destroy-parts parts)
+	  temp)))))
 
 (defun org-msg-attrs-str (attr)
   "Convert ATTR list of attributes into a string."
