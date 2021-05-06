@@ -421,7 +421,7 @@ file."
 buffer temporarily current."
   (declare (indent 0))
   (let ((id (make-symbol "id")))
-    `(let ((,id (trim-string (org-msg-message-fetch-field "in-reply-to"))))
+    `(let ((,id (string-trim (org-msg-message-fetch-field "in-reply-to"))))
        (save-window-excursion
 	 (let ((notmuch-show-only-matching-messages t))
            (notmuch-show (format "id:%s" (substring ,id 1 -1))))
