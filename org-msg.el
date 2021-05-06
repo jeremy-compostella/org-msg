@@ -331,21 +331,25 @@ is called."
 (defun org-msg-mml-recursive-support ()
   (fboundp 'mml-expand-all-html-into-multipart-related))
 
-(defun org-msg-save-article-for-reply-gnus ()
+(defun org-msg-save-article-for-reply-gnus (&optional parts header)
   "Export the currently visited `gnus-article-buffer' as HTML.
-It exports in a file using the `gnus-article-browse-html-article'
-function.  If the current article contains other HTML emails as
-attachments, the `browse-url-browser-function' is called several
-times.  We only keep track of the first call which is usually the
-actual email we want to reply to.  The
-`gnus-article-browse-html-article' also extract all the inline
+If parts is not nil, it exports in a file using the
+`gnus-article-browse-html-parts' function otherwise, it uses the
+`gnus-article-browse-html-article' function.  If the current
+article contains other HTML emails as attachments, the
+`browse-url-browser-function' is called several times.  We only
+keep track of the first call which is usually the actual email we
+want to reply to.  Both `gnus-article-browse-html-article' and
+`gnus-article-browse-html-parts' also extract all the inline
 images.  This function returns the absolute path of the HTML
 file."
   (let* ((browse-url-browser-function #'ignore)
 	 (save (cl-copy-list gnus-article-browse-html-temp-list)))
     (cl-letf (((symbol-function 'gnus-summary-show-article) #'ignore))
       (save-window-excursion
-	(gnus-article-browse-html-article)))
+	(if parts
+	    (gnus-article-browse-html-parts parts header)
+	  (gnus-article-browse-html-article))))
     (let ((temp-files (cl-set-difference gnus-article-browse-html-temp-list save
 					 :test 'string=)))
       (setq gnus-article-browse-html-temp-list save)
@@ -411,6 +415,27 @@ file."
 		(setq save-buffer-coding-system coding)))))
 	(write-file file))
       (list file))))
+
+(defun org-msg-save-article-for-reply-notmuch ()
+  "Export the currently visited notmuch article as HTML."
+  (let ((id (trim-string (org-msg-message-fetch-field "in-reply-to")))
+	header parts)
+    (cl-flet ((get-field (field)
+	       (when-let ((value (org-msg-message-fetch-field field)))
+		 (concat (capitalize field) ": " value))))
+      (save-window-excursion
+	(let ((notmuch-show-only-matching-messages t))
+          (notmuch-show (format "id:%s" (substring id 1 -1))))
+	(with-current-notmuch-show-message
+	 (let ((fields (mapcar #'get-field
+			       '("from" "subject" "to" "cc" "date"))))
+	   (setf header (mapconcat 'identity (delq nil fields) "\n")))
+	 (setf parts (mm-dissect-buffer))))
+      (with-temp-buffer
+	(let ((gnus-article-buffer (current-buffer))
+	      (gnus-article-mime-handles parts))
+	  (org-msg-save-article-for-reply-gnus parts header)))
+      (mm-destroy-parts parts))))
 
 (defun org-msg-attrs-str (attr)
   "Convert ATTR list of attributes into a string."
