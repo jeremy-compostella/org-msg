@@ -324,6 +324,15 @@ is called."
       (error "Backend not found"))))
 
 (defun org-msg-mml-recursive-support ()
+  "Return t if mml has recursive html support.
+Starting with Emacs 28, mml recursively searches for the
+text/html part allowing multipart composition with HTML content
+including images.
+
+If this is not supported, OrgMsg places the text/html as a single
+part and via an advice on the
+`mml-expand-html-into-multipart-related` function, it modified
+the mime data structure."
   (fboundp 'mml-expand-all-html-into-multipart-related))
 
 (defun org-msg-save-article-for-reply-gnus (&optional parts header)
@@ -952,12 +961,11 @@ This function is a hook for `message-send-hook'."
           ;; Clear the contents of the message
           (goto-char (org-msg-start))
           (delete-region (org-msg-start) (point-max))
-          ;; If mml has recursive html support (in later versions of emacs)
-          ;; we want to generate the structure of the MIME document here.
-          ;; If not we do this by manually editing the structure of the
-          ;; parsed MML tree in `org-msg-mml-into-multipart-related'. We
-          ;; also don't need to worry about this if we are only sending
-          ;; text/plain
+          ;; If mml has recursive html support (starting with Emacs 28), we want
+          ;; to generate the structure of the MIME document here.  If not we do
+          ;; this by manually editing the structure of the parsed MML tree in
+          ;; `org-msg-mml-into-multipart-related'. We also don't need to worry
+          ;; about this if we are only sending text/plain
           (if (or (org-msg-mml-recursive-support)
                   (not (memq 'html alternatives)))
               (progn
@@ -977,12 +985,12 @@ This function is a hook for `message-send-hook'."
 		(when mml
 		  (insert mml)))
             (mml-insert-part "text/html")
-          ;; Propertise the message contents so we don't accidently run
-          ;; this function on the buffer twice
             (insert (cdr (assoc "text/html" org-msg-alternatives)))
 	    ;; Pass data to `org-msg-mml-into-multipart-related'
             (setq org-msg-attachment attachments
 		  org-msg-mml mml))
+          ;; Propertise the message contents so we don't accidentally run this
+          ;; function on the buffer twice
           (add-text-properties (save-excursion (message-goto-body))
                                (point-max)
                                '(mml t)))))))
@@ -1321,7 +1329,7 @@ d       Delete one attachment, you will be prompted for a file name."))
 	  mml-buffer-list nil)))
 
 (defun org-msg-mode-message ()
-  "Setup the advices for message mail user agent."
+  "Setup the advice for message mail user agent."
   (if org-msg-mode
       (advice-add 'message-mail :after #'org-msg-post-setup)
     (advice-remove 'message-mail #'org-msg-post-setup)))
