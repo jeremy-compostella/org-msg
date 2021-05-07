@@ -307,9 +307,8 @@ HTML export engine."
   "Attach a file to the current draft.
 URI is the file to handle, ACTION is one of copy, move, link or
 ask."
-  (let ((file (dnd-get-local-file-name uri t)))
-    (when file
-      (org-msg-attach-attach file))))
+  (when-let ((file (dnd-get-local-file-name uri t)))
+    (org-msg-attach-attach file)))
 
 (defun org-msg-mua-call (sym &optional default &rest arg)
   "Call the specific MUA function for SYM with ARG parameters.
@@ -346,10 +345,9 @@ file."
 	(if parts
 	    (gnus-article-browse-html-parts parts header)
 	  (gnus-article-browse-html-article))))
-    (let ((temp-files (cl-set-difference gnus-article-browse-html-temp-list save
-					 :test 'string=)))
-      (setq gnus-article-browse-html-temp-list save)
-      temp-files)))
+    (prog1 (cl-set-difference gnus-article-browse-html-temp-list save
+			      :test 'string=)
+      (setq gnus-article-browse-html-temp-list save))))
 
 (defun org-msg-save-article-for-reply-mu4e ()
   "Export the currently visited mu4e article as HTML."
@@ -403,12 +401,11 @@ file."
 			     "")
 		  "</div>\n<hr>\n"))
 	;; Save the HTML file with the appropriate coding system
-	(let* ((xml (libxml-parse-html-region (point-min) (point-max)))
-	       (charset (catch 'found (org-msg-xml-walk xml #'get-charset))))
-	  (when charset
-	    (let ((coding (intern (downcase charset))))
-	      (when (coding-system-p coding)
-		(setq save-buffer-coding-system coding)))))
+	(when-let ((xml (libxml-parse-html-region (point-min) (point-max)))
+		   (charset (catch 'found (org-msg-xml-walk xml #'get-charset))))
+	  (let ((coding (intern (downcase charset))))
+	    (when (coding-system-p coding)
+	      (setq save-buffer-coding-system coding))))
 	(write-file file))
       (list file))))
 
@@ -564,10 +561,9 @@ This string can be used as a HTML style attribute value."
 		       (eq class (cadr css)))
 		  (and (not (cadr css))
 		       (eq tag (car css))))))
-    (let* ((sel (cl-remove-if-not #'css-match-p css))
-	   (props (apply 'append (mapcar 'caddr sel))))
-      (when props
-	(org-msg-props-to-style props)))))
+    (when-let ((sel (cl-remove-if-not #'css-match-p css))
+	       (props (apply 'append (mapcar 'caddr sel))))
+      (org-msg-props-to-style props))))
 
 ;; TODO: Make use of `mail-extract-address-components' from 'mail-extr
 ;; package
@@ -638,10 +634,9 @@ is the XML tree and CSS the style."
     ;; Transform mail addresses into "mailto" links
     (org-msg-list-foreach (e (cdr div))
       (when (stringp (cadr e))
-    	(let ((mailto (org-msg-str-to-mailto (cadr e) css)))
-    	  (when mailto
-    	    (setf mailto (append mailto (cddr e)))
-    	    (setcdr e mailto)))))
+    	(when-let ((mailto (org-msg-str-to-mailto (cadr e) css)))
+    	  (setf mailto (append mailto (cddr e)))
+    	  (setcdr e mailto))))
     (when css
       (assq-delete-all 'hr (assq 'body xml))
       (assq-delete-all 'align (cadr div))
@@ -679,17 +674,15 @@ and include the SVG content into the email XML tree."
 		  (car (cl-delete-if-not 'file-exists-p paths))))
 	       (make-img-abs (xml)
 		(when (eq (car xml) 'img)
-		  (let ((src (assq 'src (cadr xml))))
-		    (unless (url-type (url-generic-parse-url (cdr src)))
-		      (when src
-			(unless (file-name-absolute-p (cdr src))
-			  (let* ((file (cdr src))
-				 (path (get-file-path file)))
-			    (if path
-				(setcdr src path)
-			      (unless (y-or-n-p (format "'%s' Image is missing,\
+		  (when-let ((src (assq 'src (cadr xml)))
+			     (file (cdr src)))
+		    (unless (or (url-type (url-generic-parse-url file))
+				(file-name-absolute-p file))
+		      (if-let ((path (get-file-path file)))
+			  (setcdr src path)
+			(unless (y-or-n-p (format "'%s' Image is missing,\
  do you want to continue ?" file))
-				(error "'%s' Image is missing" file))))))))))
+			  (error "'%s' Image is missing" file)))))))
 	       (inline-svg (xml)
 		(when (and (eq (car xml) 'object)
 			   (string= (cdr (assq 'type (cadr xml)))
@@ -996,10 +989,9 @@ This function is a hook for `message-send-hook'."
 (defun org-msg-file-mime-type (file)
   "Return FILE mime type based on FILE extension.
 If FILE does not have an extension, \"text/plain\" is returned."
-  (let ((extension (file-name-extension file)))
-    (if extension
-	(mailcap-extension-to-mime extension)
-      "text/plain")))
+  (if-let ((extension (file-name-extension file)))
+      (mailcap-extension-to-mime extension)
+    "text/plain"))
 
 (defun org-msg-mml-into-multipart-related (orig-fun cont)
   "Extend the capability to handle file attachments.
@@ -1098,13 +1090,12 @@ used to automatically greet the right name, see
 			   (format "[[mailto:%s][%s]]" mail first-name)
 			 first-name)))))))
     (save-excursion
-      (let ((to (org-msg-message-fetch-field "to")))
-	(if to
-	    (let ((recipients (mail-extract-address-components to t)))
-	      (when org-msg-greeting-name-limit
-		(setf recipients (seq-take recipients org-msg-greeting-name-limit)))
-	      (string-join (delq nil (mapcar #'recipient2name recipients)) ", "))
-	  "")))))
+      (if-let ((to (org-msg-message-fetch-field "to")))
+	  (let ((recipients (mail-extract-address-components to t)))
+	    (when org-msg-greeting-name-limit
+	      (setf recipients (seq-take recipients org-msg-greeting-name-limit)))
+	    (string-join (delq nil (mapcar #'recipient2name recipients)) ", "))
+	""))))
 
 (defun org-msg-header (reply-to alternatives)
   "Build the Org OPTIONS and PROPERTIES blocks.
@@ -1358,9 +1349,8 @@ d       Delete one attachment, you will be prompted for a file name."))
       (progn
         (advice-add 'notmuch-mua-reply :after 'org-msg-post-setup)
         (advice-add 'notmuch-mua-mail :after 'org-msg-post-setup--if-not-reply))
-    (progn
-      (advice-remove 'notmuch-mua-reply 'org-msg-post-setup)
-      (advice-remove 'notmuch-mua-mail 'org-msg-post-setup--if-not-reply))))
+    (advice-remove 'notmuch-mua-reply 'org-msg-post-setup)
+    (advice-remove 'notmuch-mua-mail 'org-msg-post-setup--if-not-reply)))
 
 ;;;###autoload
 (define-minor-mode org-msg-mode
