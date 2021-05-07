@@ -1059,9 +1059,7 @@ This function is used as an advice function of `org-html--todo'.
 				    (org-msg-props-to-style props))
 			  "")
 			todo))))
-	(if info
-	    (funcall orig-fun todo info)
-	  (funcall orig-fun todo))))))
+	(funcall orig-fun todo info)))))
 
 (defun org-msg-message-fetch-field (field-name)
   "Return the value of the header field whose type is FIELD-NAME."
