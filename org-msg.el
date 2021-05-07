@@ -1193,25 +1193,24 @@ MML tags."
 			    (if (eq type 'new)
 				""
 			      (org-msg-get-to-name)))))
-	  (save-excursion
-	    (when (eq .style 'top-posting)
-	      (save-excursion
-		(insert "\n\n" org-msg-separator "\n")
-		(delete-region (line-beginning-position) (1+ (line-end-position)))
-		(dolist (rep '(("^>+ *" . "") ("___+" . "---")))
-		  (save-excursion
-		    (while (re-search-forward (car rep) nil t)
-		      (replace-match (cdr rep)))))
-		(org-escape-code-in-region (point) (point-max))))
-	    (when .signature
-	      (unless (eq .style 'top-posting)
-		(goto-char (point-max)))
-	      (insert .signature))
-	    (if (org-msg-message-fetch-field "to")
-		(org-msg-goto-body)
-	      (message-goto-to))
-	    (org-msg-edit-mode))
-	  (set-buffer-modified-p nil))))))
+	  (when (eq .style 'top-posting)
+	    (save-excursion
+	      (insert "\n\n" org-msg-separator "\n")
+	      (delete-region (line-beginning-position) (1+ (line-end-position)))
+	      (dolist (rep '(("^>+ *" . "") ("___+" . "---")))
+		(save-excursion
+		  (while (re-search-forward (car rep) nil t)
+		    (replace-match (cdr rep)))))
+	      (org-escape-code-in-region (point) (point-max))))
+	  (when .signature
+	    (unless (eq .style 'top-posting)
+	      (goto-char (point-max)))
+	    (insert .signature))
+	  (if (org-msg-message-fetch-field "to")
+	      (org-msg-goto-body)
+	    (message-goto-to))
+	  (org-msg-edit-mode))
+	(set-buffer-modified-p nil)))))
 
 (defun org-msg-post-setup--if-not-reply (&rest args)
   "Helper for new mail setup vs reply in notmuch"
