@@ -565,8 +565,6 @@ This string can be used as a HTML style attribute value."
 	       (props (apply 'append (mapcar 'caddr sel))))
       (org-msg-props-to-style props))))
 
-;; TODO: Make use of `mail-extract-address-components' from 'mail-extr
-;; package
 (defun org-msg-str-to-mailto (str css)
   "Convert a string of mail addresses into mailto anchor links.
 Takes a string STR as a parameter and build a list of string and
