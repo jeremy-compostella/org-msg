@@ -422,13 +422,15 @@ file."
   "Execute the forms in BODY with the replied notmuch message
 buffer temporarily current."
   (declare (indent 0))
-  (let ((id (make-symbol "id")))
+  (let ((id (make-symbol "id"))
+	(buf (make-symbol "buf")))
     `(let ((,id (org-msg-message-fetch-field "in-reply-to")))
        (save-window-excursion
-	 (let ((notmuch-show-only-matching-messages t))
-           (notmuch-show (format "id:%s" (substring ,id 1 -1))))
-	 (with-current-notmuch-show-message
-	  (progn ,@body))))))
+	 (let* ((notmuch-show-only-matching-messages t)
+	       (,buf (notmuch-show (format "id:%s" (substring ,id 1 -1)))))
+	   (with-current-notmuch-show-message
+	    (prog1 (progn ,@body)
+	      (kill-buffer ,buf))))))))
 
 (defun org-msg-save-article-for-reply-notmuch ()
   "Export the currently visited notmuch article as HTML."
