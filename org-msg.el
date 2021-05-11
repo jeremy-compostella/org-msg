@@ -426,7 +426,7 @@ buffer temporarily current."
 	(buf (make-symbol "buf")))
     `(let ((,id (org-msg-message-fetch-field "in-reply-to")))
        (save-window-excursion
-	 (let ((notmuch-show-only-matching-messages t)
+	 (let* ((notmuch-show-only-matching-messages t)
 	       (,buf (notmuch-show (format "id:%s" (substring ,id 1 -1)))))
 	   (with-current-notmuch-show-message
 	    (prog1 (progn ,@body)
