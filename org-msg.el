@@ -428,9 +428,10 @@ buffer temporarily current."
        (save-window-excursion
 	 (let* ((notmuch-show-only-matching-messages t)
 	       (,buf (notmuch-show (format "id:%s" (substring ,id 1 -1)))))
-	   (with-current-notmuch-show-message
-	    (prog1 (progn ,@body)
-	      (kill-buffer ,buf))))))))
+	   (notmuch-show-view-raw-message)
+	   (prog1 (progn ,@body)
+	     (kill-buffer ,buf)
+	     (kill-buffer)))))))
 
 (defun org-msg-save-article-for-reply-notmuch ()
   "Export the currently visited notmuch article as HTML."
