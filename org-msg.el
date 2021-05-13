@@ -442,7 +442,9 @@ buffer temporarily current."
 	(let ((fields (mapcar #'get-field
 			      '("from" "subject" "to" "cc" "date"))))
 	  (setf header (mapconcat 'identity (delq nil fields) "\n")))
-	(setf parts (mm-dissect-buffer)))
+	(setf parts (mm-dissect-buffer))
+	(unless (listp (car parts))
+	  (setf parts (list parts))))
       (with-temp-buffer
 	(let ((gnus-article-buffer (current-buffer))
 	      (gnus-article-mime-handles parts))
