@@ -1035,15 +1035,19 @@ variable set by `org-msg-prepare-to-send'."
         (setf alternative `((multipart (type . "alternative")
                                        ,@alternative))))
       ;; Combine the attachments and the resulting content part/multipart
-      (if (or org-msg-attachment org-msg-mml)
-          `(multipart (type . "mixed")
-                      ,@alternative
-                      ,@newparts
-		      ,@(when org-msg-mml
-			  (with-temp-buffer
-			    (insert org-msg-mml)
-			    (mml-parse))))
-	alternative))))
+      (prog1
+	  (if (or org-msg-attachment org-msg-mml)
+	      `(multipart (type . "mixed")
+			  ,@alternative
+			  ,@newparts
+			  ,@(when org-msg-mml
+			      (with-temp-buffer
+				(insert org-msg-mml)
+				(mml-parse))))
+	    alternative)
+	(setq org-msg-mml nil
+	      org-msg-attachment nil
+	      org-msg-alternatives nil)))))
 
 (defun org-msg-html--todo (orig-fun todo &optional info)
   "Format todo keywords into HTML.
