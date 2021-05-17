@@ -1506,8 +1506,8 @@ Type \\[org-msg-attach] to call the dispatcher for attachment
   (cond ((message-mail-alias-type-p 'abbrev) (mail-abbrevs-setup))
 	((message-mail-alias-type-p 'ecomplete) (ecomplete-setup)))
   (setq org-font-lock-keywords
-	(append org-font-lock-keywords gnus-message-citation-keywords
-		message-font-lock-keywords org-msg-font-lock-keywords))
+	(append message-font-lock-keywords org-font-lock-keywords
+		gnus-message-citation-keywords org-msg-font-lock-keywords))
   (toggle-truncate-lines)
   (org-msg-mua-call 'edit-mode)
   (setq-local kill-buffer-hook 'org-msg-kill-buffer
