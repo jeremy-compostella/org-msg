@@ -231,7 +231,7 @@ Can be either `top-posting' or nil."
     (pre nil ((line-height . "12pt")
 	      ,@inline-src
 	      (margin . "10px")
--             (border . "2px solid #ccc")
+              (border . "2px solid #ccc")
 	      (font-size . "9pt")
 	      (font-family . "monospace")))
     (div org-src-container ((margin-top . "10px")))
