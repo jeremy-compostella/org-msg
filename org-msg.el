@@ -184,7 +184,7 @@ Can be either `top-posting' or nil."
 			     fundamental ini json makefile man org plantuml
 			     python sh xml))
 	 (inline-src `((color . ,(face-foreground 'default))
-		       (background-color . ,(face-background 'default))))
+		       (background-color . ,"#eeeeee")))
 	 (code-src
 	  (mapcar (lambda (mode)
 		    `(code ,(intern (concat "src src-" (symbol-name mode)))
@@ -230,7 +230,8 @@ Can be either `top-posting' or nil."
 		 (background-color . "#aaaaaa")))
     (pre nil ((line-height . "12pt")
 	      ,@inline-src
-	      (margin . "0px")
+	      (margin . "10px")
+-             (border . "2px solid #ccc")
 	      (font-size . "9pt")
 	      (font-family . "monospace")))
     (div org-src-container ((margin-top . "10px")))
