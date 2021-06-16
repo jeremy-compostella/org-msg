@@ -1287,6 +1287,16 @@ d       Delete one attachment, you will be prompted for a file name."))
     (cond ((memq c '(?a ?\C-a)) (call-interactively 'org-msg-attach-attach))
 	  ((memq c '(?d ?\C-d)) (call-interactively 'org-msg-attach-delete)))))
 
+(defun org-msg-dired-mail-buffers ()
+  "Return a list of active message buffers."
+  (let (buffers)
+    (save-current-buffer
+      (dolist (buffer (buffer-list t))
+        (set-buffer buffer)
+        (when (and (derived-mode-p 'org-msg-edit-mode)
+                   (null message-sent-message-via))
+          (push (buffer-name buffer) buffers))))
+    (nreverse buffers)))
 (defun org-msg-start ()
   "Return the point of the beginning of the message body."
   (save-excursion
