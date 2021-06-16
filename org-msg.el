@@ -1287,6 +1287,7 @@ d       Delete one attachment, you will be prompted for a file name."))
     (cond ((memq c '(?a ?\C-a)) (call-interactively 'org-msg-attach-attach))
 	  ((memq c '(?d ?\C-d)) (call-interactively 'org-msg-attach-delete)))))
 
+
 (defun org-msg-dired-mail-buffers ()
   "Return a list of active message buffers."
   (let (buffers)
@@ -1297,6 +1298,64 @@ d       Delete one attachment, you will be prompted for a file name."))
                    (null message-sent-message-via))
           (push (buffer-name buffer) buffers))))
     (nreverse buffers)))
+
+(defun org-msg-dired-attach (files-to-attach)
+  "Attach dired's marked files to a org-msg message composition.
+If called non-interactively, FILES-TO-ATTACH should be a list of
+filenames. Mirrors gnus-dired-attach with the difference that the attachments
+are properly added to the property drawer as in org-msg-attach-attach."
+  (interactive
+   (list
+    (delq nil
+	  (mapcar
+	   ;; don't attach directories
+	   (lambda (f) (if (file-directory-p f) nil f))
+	   (nreverse (dired-map-over-marks (dired-get-filename) nil))))))
+  (let ((destination nil)
+	(files-str nil)
+	(bufs nil))
+    ;; warn if user tries to attach without any files marked
+    (if (null files-to-attach)
+	(error "No files to attach")
+      (setq files-str
+	    (mapconcat
+	     (lambda (f) (file-name-nondirectory f))
+	     files-to-attach ", "))
+      (setq bufs (org-msg-dired-mail-buffers))
+
+      ;; set up destination mail composition buffer
+      (if (and bufs
+	       (y-or-n-p "Attach files to existing mail composition buffer? "))
+	  (setq destination
+		(if (= (length bufs) 1)
+		    (get-buffer (car bufs))
+		  (gnus-completing-read "Attach to buffer"
+                                         bufs t nil nil (car bufs))))
+	;; setup a new mail composition buffer
+	(let ((mail-user-agent gnus-dired-mail-mode)
+	      ;; A workaround to prevent Gnus from displaying the Gnus
+	      ;; logo when invoking this command without loading Gnus.
+	      ;; Gnus demonstrates it when gnus.elc is being loaded if
+	      ;; a command of which the name is prefixed with "gnus"
+	      ;; causes that autoloading.  See the code in question,
+	      ;; that is the one first found in gnus.el by performing
+	      ;; `C-s this-command'.
+	      (this-command (if (eq gnus-dired-mail-mode 'gnus-user-agent)
+				'gnoose-dired-attach
+			      this-command)))
+	  (compose-mail))
+	(setq destination (current-buffer)))
+
+      ;; set buffer to destination buffer, and attach files
+      (set-buffer destination)
+      (goto-char (point-max))		;attach at end of buffer
+      (let ((files (org-msg-get-prop "attachment")))
+	(while files-to-attach
+	  (org-msg-set-prop "attachment" (push (car files-to-attach) files))
+	  (setq files-to-attach (cdr files-to-attach))))
+      (message "Attached file(s) %s" files-str))))
+
+
 (defun org-msg-start ()
   "Return the point of the beginning of the message body."
   (save-excursion
