@@ -41,6 +41,7 @@
 (require 'mml)
 (require 'org)
 (require 'ox)
+(require 'subr-x)
 (require 'url-parse)
 (require 'xml)
 
@@ -152,6 +153,10 @@ Example:
   "Define the posting style for HTML replies.
 Can be either `top-posting' or nil."
   :type '(symbol))
+
+(defcustom org-msg-undesirable-headers '("^attachments?$")
+  "List of undesirable header to delete from the original email."
+  :type '(list regexp))
 
 (defcustom org-msg-dnd-protocol-alist
   '(("^file:" . org-msg-dnd-handle-file))
@@ -638,14 +643,20 @@ is the XML tree and CSS the style."
 						  (concat (car e) (cl-caddr e))))
 	      (setcdr e (cl-cdddr e)))
 	  (setf e (cdr e)))))
-    ;; Add a bold property to the prefixes like "From", "Date",
-    ;; "Subject", ...
-    (org-msg-list-foreach (e (cdr div))
-      (when (stringp (cadr e))
-	(let ((prefix (car (split-string (cadr e) ":"))))
-	  (setcar (cdr e) (replace-regexp-in-string prefix "" (cadr e)))
-	  (setcdr e (cons `(b nil ,(capitalize prefix)) (cdr e)))
-	  (setf e (cdr e)))))
+    ;; Add a bold property to the prefixes like "From", "Date", "Subject",
+    ;; ... This section also deletes the undesirable header lines as
+    ;; specified by `org-msg-undesirable-headers'.
+  (let ((e (cdr div)))
+    (while e
+      (if (stringp (cadr e))
+	  (let ((prefix (car (split-string (cadr e) ":"))))
+	    (if (cl-find prefix org-msg-undesirable-headers
+			 :test (lambda (x y) (string-match-p y (string-trim x))))
+		(setcdr e (cdddr e))
+	      (setcar (cdr e) (replace-regexp-in-string prefix "" (cadr e)))
+	      (setcdr e (cons `(b nil ,(capitalize prefix)) (cdr e)))
+	      (setf e (cddr e))))
+	(setf e (cdr e)))))
     ;; Transform mail addresses into "mailto" links
     (org-msg-list-foreach (e (cdr div))
       (when (stringp (cadr e))
