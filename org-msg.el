@@ -124,7 +124,7 @@ to be called with another name, an acronym or its name has
 accents. This variable can be used to specify these exceptions.
 
 Example: ((\"jeremy.compostella@gmail.com\" . \"Jérémy\"))"
-  :type '(list (const string string)))
+  :type '(list (cons string string)))
 
 (defcustom org-msg-greeting-name-limit 1
   "Maximum number of recipient first name for the greeting format.
