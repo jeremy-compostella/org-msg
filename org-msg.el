@@ -108,6 +108,20 @@ Available alternatives are listed in `org-msg-alternative-exporters'."
   :type '(choice (list symbol)
 		 (list (alist symbol (list symbol)))))
 
+(defcustom org-msg-attach-default nil
+  "Default action for org-msg-attach.
+
+By default org-msg-attach (bound to `C-c C-a' by default) opens a
+dispatcher for you to attach a file, or delete an
+attachment. Setting this variable bypasses the dispatcher: set it
+to attach to always attach, or delete to always delete. Setting
+it to nil (the default) opens the dispatcher.
+
+Invoking org-msg-attach with a prefix argument always opens the
+dispatcher, regardless of this variable's value."
+  :type 'symbol
+  :options '(attach delete nil))
+
 (defcustom org-msg-greeting-fmt nil
   "Mail greeting format.
 If it contains a '%s' format, '%s' is replaced with the first
@@ -1279,7 +1293,7 @@ function is called.  `org-cycle' is called otherwise."
 	 (d (completing-read "File to remove: " files)))
     (org-msg-set-prop "attachment" (delete d files))))
 
-(defun org-msg-attach ()
+(defun org-msg-attach-dispatcher ()
   "The dispatcher for attachment commands.
 Shows a list of commands and prompts for another key to execute a
 command."
@@ -1298,6 +1312,15 @@ d       Delete one attachment, you will be prompted for a file name."))
 	(and (get-buffer "*Org Attach*") (kill-buffer "*Org Attach*"))))
     (cond ((memq c '(?a ?\C-a)) (call-interactively 'org-msg-attach-attach))
 	  ((memq c '(?d ?\C-d)) (call-interactively 'org-msg-attach-delete)))))
+
+(defun org-msg-attach (arg)
+  (interactive "P")
+  (if arg
+      (org-msg-attach-dispatcher)
+    (cl-case org-msg-attach-default
+      ('attach (call-interactively 'org-msg-attach-attach))
+      ('delete (call-interactively 'org-msg-attach-delete))
+      (t (org-msg-attach-dispatcher)))))
 
 (defun org-msg-dired-attach (orig-fun files-to-attach)
   "Attach dired's marked files to a OrgMsg message composition.
