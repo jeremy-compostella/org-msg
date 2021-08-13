@@ -23,7 +23,7 @@ The *OrgMsg* mode keys are the usual key combination used in either [[https://or
 - ~C-c C-s~ -- calls ~message-goto-subject~ (same as in [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][Message mode]])
 - ~C-c C-b~ -- calls ~org-msg-goto-body~ (similar to ~message-goto-body~ in [[https://www.gnu.org/software/emacs/manual/html_mono/message.html][Message mode]])
 - ~C-c C-a~ -- calls ~org-msg-attach~, very similar to the ~org-attach~ function.  It lets you add or delete attachment for this email.  Attachment list is stored in the ~:attachment:~ property.
-- ~C-c C-c~ -- calls ~org-ctrl-c-ctrl-c~. *OrgMsg* configures ~org-msg-ctrl-c-ctrl-c~ as a final hook of [[https://orgmode.org/][Org mode]]. When ~org-msg-ctrl-c-ctrl-c~ is called in a *OrgMsg* buffer it generates the MIME message and send it.
+- ~C-c C-c~ -- calls ~org-ctrl-c-ctrl-c~. *OrgMsg* configures ~org-msg-ctrl-c-ctrl-c~ as a final hook of [[https://orgmode.org/][Org mode]]. When ~org-msg-ctrl-c-ctrl-c~ is called in a *OrgMsg* buffer it generates the MIME message, sends it and exits. If the universal argument is supplied, the last step is skipped.
 
 The ~org-msg-mode~ interactive function can be called to enable/disable *OrgMsg*.  By default, once the module is loaded, it is disable.  If you want to reply to an email without making use of *OrgMsg*, you should call that function before you call the reply-to function.
 
