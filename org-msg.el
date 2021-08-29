@@ -111,9 +111,10 @@ Available alternatives are listed in `org-msg-alternative-exporters'."
 (defcustom org-msg-greeting-fmt nil
   "Mail greeting format.
 If it contains a '%s' format, '%s' is replaced with the first
-name of the person you are replying to.
+name of the person you are replying to with a space prefix. 
 
-Example: \"\nHi %s,\n\n\""
+Example: \"Hi%s,\"
+is replaced by either \"Hi Mark,\" or \"Hi,\"."
   :type '(string))
 
 (defcustom org-msg-recipient-names '()
@@ -1223,7 +1224,7 @@ MML tags."
 	    (insert (format .greeting-fmt
 			    (if (eq type 'new)
 				""
-			      (org-msg-get-to-name)))))
+			      (concat " " (org-msg-get-to-name))))))
 	  (when (eq .style 'top-posting)
 	    (save-excursion
 	      (insert "\n\n" org-msg-separator "\n")
