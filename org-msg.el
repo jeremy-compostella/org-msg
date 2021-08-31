@@ -164,6 +164,11 @@ Can be either `top-posting' or nil."
   "The functions to call when a file drop is made."
   :type '(repeat (cons (regexp) (function))))
 
+(defcustom org-msg-attached-file-reference
+  "attach[a-z]*\\|enclose"
+  "Regular expression detecting a reference to an attached file."
+  :type 'regexp)
+
 (defun org-msg-lighten (color)
   "Make a color lighter by a 20%."
   (apply 'color-rgb-to-hex
@@ -1250,11 +1255,27 @@ MML tags."
 
 (defalias 'org-msg-send-and-exit-notmuch 'notmuch-mua-send-and-exit)
 
+(defun org-msg-sanity-check ()
+  "Sanity check the mail body for any reference to a missing file
+attachment. The detection relies on the regular expression
+defined by the `org-msg-attached-file-reference' customization
+variable."
+  (or (org-msg-get-prop "attachment")
+      (save-excursion
+	(goto-char (org-msg-start))
+	(while (re-search-forward org-property-re nil t)
+	  (forward-line))
+	(not (re-search-forward org-msg-attached-file-reference (org-msg-end) t)))
+      (y-or-n-p "You may have forgotten to attach a file. Do you still want \
+to proceed?")
+      (error "Aborted")))
+
 (defun org-msg-ctrl-c-ctrl-c ()
   "Send message like `message-send-and-exit'.
 If the current buffer is OrgMsg buffer and OrgMsg is enabled (see
 `org-msg-toggle'), it calls `message-send-and-exit'."
   (when (eq major-mode 'org-msg-edit-mode)
+    (org-msg-sanity-check)
     (org-msg-mua-call 'send-and-exit 'message-send-and-exit)))
 
 (defun org-msg-tab ()
