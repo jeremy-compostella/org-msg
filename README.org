@@ -88,6 +88,8 @@ In order to avoid CSS conflict, *OrgMsg* performs inline replacement when it gen
 
 Setting the org export option ~tex:dvipng~ or ~tex:dvisvgm~ is handeled correctly by this mode by producing inline images or inlining the generated SVG. Note that most mailclients however sadly do not display SVG content in mails so it might be best to stick to settings producing images unless you know your recipient's mailclient supports SVG.
 
+*OrgMsg* includes a minimalist detection of missing attachment which relies on a regular expression defined by the ~org-msg-attached-file-reference~ customization variable.
+
 ** Advanced configuration
 
 It would be impossible for *OrgMsg* to offer composition customization variables to accommodate all the combinations of desirable behaviors. For instance, one could want to reply as plain text only for a certain type of email as characterized by the sender domain name or a subject prefix. Or another could want to change its signature when replying as plain text only. In addition, emails can be used to interact with machines and their protocol can have even more exotic requirements.
