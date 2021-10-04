@@ -111,7 +111,7 @@ Available alternatives are listed in `org-msg-alternative-exporters'."
 (defcustom org-msg-greeting-fmt nil
   "Mail greeting format.
 If it contains a '%s' format, '%s' is replaced with the first
-name of the person you are replying to with a space prefix. 
+name of the person you are replying to with a space prefix.
 
 Example: \"Hi%s,\"
 is replaced by either \"Hi Mark,\" or \"Hi,\"."
