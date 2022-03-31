@@ -36,6 +36,7 @@
 (require 'gnus-art)
 (require 'gnus-cite)
 (require 'gnus-dired)
+(require 'gnus-icalendar)
 (require 'gnus-msg)
 (require 'htmlize)
 (require 'message)
@@ -1400,14 +1401,27 @@ This function is used as an advice function of
       (advice-add 'message-mail :after #'org-msg-post-setup)
     (advice-remove 'message-mail #'org-msg-post-setup)))
 
+(defun org-msg-inhibited (orig-fun &rest args)
+  "Call ORIG-FUN with OrgMsg mode disabled."
+  (let ((enable org-msg-mode))
+    (when enable
+      (org-msg-mode 0))
+    (prog1
+        (apply orig-fun args)
+      (when enable
+        (org-msg-mode 1)))))
+
 (defun org-msg-mode-gnus ()
   "Setup the hook for gnus mail user agent."
   (if org-msg-mode
       (progn
 	(add-hook 'gnus-message-setup-hook 'org-msg-post-setup)
-	(add-hook 'gnus-message-setup-hook 'org-msg-store-mml-buffers))
+	(add-hook 'gnus-message-setup-hook 'org-msg-store-mml-buffers)
+	(advice-add 'gnus-icalendar-send-buffer-by-mail
+		    :around #'org-msg-inhibited))
     (remove-hook 'gnus-message-setup-hook 'org-msg-post-setup)
-    (remove-hook 'gnus-message-setup-hook 'org-msg-store-mml-buffers)))
+    (remove-hook 'gnus-message-setup-hook 'org-msg-store-mml-buffers)
+    (advice-remove 'gnus-icalendar-send-buffer-by-mail 'org-msg-inhibited)))
 
 (defun org-msg-mode-mu4e ()
   "Setup the hook for mu4e mail user agent."
