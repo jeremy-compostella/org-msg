@@ -1391,8 +1391,11 @@ This function is used as an advice function of
 (defun org-msg-mode-mu4e ()
   "Setup the hook for mu4e mail user agent."
   (if org-msg-mode
-      (add-hook 'mu4e-compose-mode-hook 'org-msg-post-setup)
-    (remove-hook 'mu4e-compose-mode-hook 'org-msg-post-setup)))
+      (progn (add-hook 'mu4e-compose-mode-hook 'org-msg-post-setup)
+	     (advice-add 'mu4e-icalendar-reply
+			 :around #'org-msg-inhibited))
+    (remove-hook 'mu4e-compose-mode-hook 'org-msg-post-setup)
+    (advice-remove 'mu4e-icalendar-reply 'org-msg-inhibited)))
 
 (defun org-msg-mode-notmuch ()
   "Setup the hook for notmuch mail user agent."
