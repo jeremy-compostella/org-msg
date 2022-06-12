@@ -1242,7 +1242,7 @@ MML tags."
 	      (org-escape-code-in-region (point) (point-max))))
 	  (when .signature
 	    (unless (eq .style 'top-posting)
-	      (goto-char (point-max)))
+	      (goto-char (org-msg-end)))
 	    (insert .signature))
 	  (if (org-msg-message-fetch-field "to")
 	      (org-msg-goto-body)
