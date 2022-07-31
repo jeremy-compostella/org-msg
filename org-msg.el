@@ -1223,27 +1223,28 @@ MML tags."
 	   (alternatives (org-msg-get-alternatives type)))
       (when alternatives
 	(let-alist (org-msg-composition-parameters type alternatives)
-	  (insert (org-msg-header (when (eq .style 'top-posting)
-				    (org-msg-mua-call 'save-article-for-reply))
-				  alternatives))
-	  (when .greeting-fmt
-	    (insert (format .greeting-fmt
-			    (if (eq type 'new)
-				""
-			      (concat " " (org-msg-get-to-name))))))
-	  (when (eq .style 'top-posting)
-	    (save-excursion
-	      (insert "\n\n" org-msg-separator "\n")
-	      (delete-region (line-beginning-position) (1+ (line-end-position)))
-	      (dolist (rep '(("^>+ *" . "") ("___+" . "---")))
-		(save-excursion
-		  (while (re-search-forward (car rep) nil t)
-		    (replace-match (cdr rep)))))
-	      (org-escape-code-in-region (point) (point-max))))
-	  (when .signature
-	    (unless (eq .style 'top-posting)
-	      (goto-char (point-max)))
-	    (insert .signature))
+	  (unless (search-forward org-msg-options nil t)
+	    (insert (org-msg-header (when (eq .style 'top-posting)
+				      (org-msg-mua-call 'save-article-for-reply))
+				    alternatives))
+	    (when .greeting-fmt
+	      (insert (format .greeting-fmt
+			      (if (eq type 'new)
+				  ""
+				(concat " " (org-msg-get-to-name))))))
+	    (when (eq .style 'top-posting)
+	      (save-excursion
+		(insert "\n\n" org-msg-separator "\n")
+		(delete-region (line-beginning-position) (1+ (line-end-position)))
+		(dolist (rep '(("^>+ *" . "") ("___+" . "---")))
+		  (save-excursion
+		    (while (re-search-forward (car rep) nil t)
+		      (replace-match (cdr rep)))))
+		(org-escape-code-in-region (point) (point-max))))
+	    (when .signature
+	      (unless (eq .style 'top-posting)
+		(goto-char (point-max)))
+	      (insert .signature)))
 	  (if (org-msg-message-fetch-field "to")
 	      (org-msg-goto-body)
 	    (message-goto-to))
