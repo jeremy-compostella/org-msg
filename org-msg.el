@@ -373,63 +373,24 @@ file."
 
 (defun org-msg-save-article-for-reply-mu4e ()
   "Export the currently visited mu4e article as HTML."
-  (let* ((msg mu4e-compose-parent-message)
-	 (html (mu4e-message-field msg :body-html))
-	 (file (make-temp-file "org-msg" nil ".html")))
-    (cl-flet* ((mails2str (l)
-		 (mapconcat (lambda (m)
-			      (let ((name (or (car m) (cdr m))))
-				(format "%S &lt;%s&gt;" name (cdr m))))
-			    l ", "))
-	       (field2str (f)
-		 (let ((value (funcall (cdr f)
-				       (mu4e-message-field msg (car f)))))
-		   (when (and value (not (string-empty-p value)))
-		     (format "%s: %s<br>\n"
-			     (capitalize (substring (symbol-name (car f)) 1))
-			     value))))
-	       (get-charset (xml)
-		 (when (eq 'meta (car xml))
-		   (let ((attr (cadr xml)))
-		     (cond ((string= (downcase (alist-get 'http-equiv attr ""))
-				     "content-type")
-			    (let ((c (alist-get 'content attr)))
-			      (when (string-match "charset=\\([a-z0-9-]+\\)" c)
-				(throw 'found (match-string 1 c)))))
-			   ((alist-get 'charset attr)
-			    (throw 'found (alist-get 'charset attr))))))))
+  (let ((msg mu4e-compose-parent-message))
+    (with-temp-buffer
+    (insert-file-contents-literally
+     (mu4e-message-readable-path msg) nil nil nil t)
+  (let ((parts (mm-dissect-buffer t t))
+	(header (cl-loop for field in '("from" "to" "cc" "date" "subject")
+			     when (message-fetch-field field)
+			     concat (format "%s: %s\n" (capitalize field) it))))
 
-      (with-temp-buffer
-	(save-excursion
-	  (insert html))
-	;; Remove everything before html tag
-	(save-excursion
-	  (if (re-search-forward "^<html\\(.*?\\)>" nil t)
-	      (delete-region (point-min) (match-beginning 0))
-	    ;; Handle malformed HTML
-	    (insert "<html><body>")
-	    (goto-char (point-max))
-	    (insert "</body></html>")))
-	;; Insert reply header after body tag
-	(when (re-search-forward "<body\\(.*?\\)>" nil t)
-	  (goto-char (match-end 0))
-	  (insert "<div align=\"left\">\n"
-		  (mapconcat #'field2str
-			     `((:from . ,#'mails2str)
-			       (:subject . identity)
-			       (:to . ,#'mails2str)
-			       (:cc . ,#'mails2str)
-			       (:date . message-make-date))
-			     "")
-		  "</div>\n<hr>\n"))
-	;; Save the HTML file with the appropriate coding system
-	(when-let ((xml (libxml-parse-html-region (point-min) (point-max)))
-		   (charset (catch 'found (org-msg-xml-walk xml #'get-charset))))
-	  (let ((coding (intern (downcase charset))))
-	    (when (coding-system-p coding)
-	      (setq save-buffer-coding-system coding))))
-	(write-file file))
-      (list file))))
+     (when (and (bufferp (car parts))
+		 (stringp (car (mm-handle-type parts))))
+       (setq parts (list parts)))
+     (message "HERE")
+     (print parts)
+     (let ((gnus-article-buffer (current-buffer))
+	   (gnus-article-mime-handles parts))
+      	  (prog1 (org-msg-save-article-for-reply-gnus parts header)
+	    (mm-destroy-parts parts)))))))
 
 (defmacro org-msg-with-original-notmuch-message (&rest body)
   "Execute the forms in BODY with the replied notmuch message
@@ -1159,8 +1120,11 @@ a html mime part, it returns t, nil otherwise."
     (org-msg-article-htmlp)))
 
 (defun org-msg-article-htmlp-mu4e ()
-  "Return t if the current mu4e article is HTML article."
-  (when (mu4e-message-field mu4e-compose-parent-message :body-html) t))
+  (let ((msg mu4e-compose-parent-message))
+    (with-temp-buffer
+    (insert-file-contents-literally
+     (mu4e-message-readable-path msg) nil nil nil t)
+    (org-msg-article-htmlp))))
 
 (defun org-msg-article-htmlp-notmuch ()
   "Return t if the current notmuch article is an HTML article."
