@@ -375,21 +375,21 @@ file."
   "Export the currently visited mu4e article as HTML."
   (let ((msg mu4e-compose-parent-message))
     (with-temp-buffer
-    (insert-file-contents-literally
-     (mu4e-message-readable-path msg) nil nil nil t)
-  (let ((parts (mm-dissect-buffer t t))
-	(header (cl-loop for field in '("from" "to" "cc" "date" "subject")
+      (insert-file-contents-literally
+       (mu4e-message-readable-path msg) nil nil nil t)
+      (rfc2047-decode-region (point-min) (point-max))
+      (let ((parts (mm-dissect-buffer t t))
+	    (header (cl-loop for field in '("from" "to" "cc" "date" "subject")
 			     when (message-fetch-field field)
 			     concat (format "%s: %s\n" (capitalize field) it))))
 
-     (when (and (bufferp (car parts))
-		 (stringp (car (mm-handle-type parts))))
-       (setq parts (list parts)))
-     (message "HERE")
-     (print parts)
-     (let ((gnus-article-buffer (current-buffer))
-	   (gnus-article-mime-handles parts))
-      	  (prog1 (org-msg-save-article-for-reply-gnus parts header)
+	(when (and (bufferp (car parts))
+		   (stringp (car (mm-handle-type parts))))
+	  (setf parts (list parts)))
+	(let ((gnus-article-buffer (current-buffer))
+	      (gnus-article-mime-handles parts))
+	  (prog1
+	      (org-msg-save-article-for-reply-gnus parts header)
 	    (mm-destroy-parts parts)))))))
 
 (defmacro org-msg-with-original-notmuch-message (&rest body)
@@ -1122,9 +1122,9 @@ a html mime part, it returns t, nil otherwise."
 (defun org-msg-article-htmlp-mu4e ()
   (let ((msg mu4e-compose-parent-message))
     (with-temp-buffer
-    (insert-file-contents-literally
-     (mu4e-message-readable-path msg) nil nil nil t)
-    (org-msg-article-htmlp))))
+      (insert-file-contents-literally
+       (mu4e-message-readable-path msg) nil nil nil t)
+      (org-msg-article-htmlp))))
 
 (defun org-msg-article-htmlp-notmuch ()
   "Return t if the current notmuch article is an HTML article."
