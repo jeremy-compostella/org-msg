@@ -1474,7 +1474,7 @@ HTML emails."
   "Setup mu4e faces, addresses completion and run mu4e."
   (mu4e~compose-remap-faces)
   (unless (mu4e-running-p)
-    (mu4e~start))
+    (if (fboundp #'mu4e~start) (mu4e~start) (mu4e--start)))
   (when mu4e-compose-complete-addresses
     (mu4e~compose-setup-completion))
   ;; the following code is verbatim from mu4e-compose.el, `mu4e-compose-mode'
