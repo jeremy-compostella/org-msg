@@ -107,7 +107,7 @@ but not to replies to plain text emails.
 
 Available alternatives are listed in `org-msg-alternative-exporters'."
   :type '(choice (list symbol)
-		 (list (alist symbol (list symbol)))))
+		 (alist :key-type symbol :value-type (repeat symbol))))
 
 (defcustom org-msg-greeting-fmt nil
   "Mail greeting format.
