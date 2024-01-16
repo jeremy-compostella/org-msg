@@ -1197,6 +1197,9 @@ MML tags."
 				  ""
 				(concat " " (org-msg-get-to-name))))))
 	    (when (eq .style 'top-posting)
+	      (setq mml-content-disposition-alist
+		    (append (org-msg--mml-content-disposition-alist)
+			    mml-content-disposition-alist))
 	      (save-excursion
 		(insert "\n\n" org-msg-separator "\n")
 		(delete-region (line-beginning-position) (1+ (line-end-position)))
@@ -1348,16 +1351,24 @@ This function is used as an advice function of
 	   (goto-char citation-start))
 	 (re-search-forward ,regexp (point-max) t)))))
 
+(defun org-msg--mml-content-disposition-alist ()
+  "Return the appropriate per-file MIME disposition."
+  (mapcar (lambda (x)
+	    (cons (concat x ".*") "inline"))
+	  (org-msg-get-prop "reply-to")))
+
 (defun org-msg-kill-buffer ()
   "Delete temporary files."
-  (let ((files (org-msg-get-prop "reply-to")))
-    (dolist (file files)
-      (when (and (not (string= "" file)) (file-exists-p file))
-	(cond ((file-directory-p file) (delete-directory file t))
-	      ((delete-file file)))))
-    (when org-msg-mml-buffer-list
-      (let ((mml-buffer-list org-msg-mml-buffer-list))
-	(mml-destroy-buffers)))))
+  (dolist (file (org-msg-get-prop "reply-to"))
+    (when (and (not (string= "" file)) (file-exists-p file))
+      (cond ((file-directory-p file) (delete-directory file t))
+	    ((delete-file file)))))
+  (dolist (disposition (org-msg--mml-content-disposition-alist))
+    (setq mml-content-disposition-alist
+	  (delete disposition mml-content-disposition-alist)))
+  (when org-msg-mml-buffer-list
+    (let ((mml-buffer-list org-msg-mml-buffer-list))
+      (mml-destroy-buffers))))
 
 (defun org-msg-store-mml-buffers ()
   "Locally store the list of MML temporary buffers."
