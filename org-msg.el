@@ -1300,7 +1300,7 @@ This function is used as an advice function of
 		(and (derived-mode-p 'org-msg-edit-mode)
 		     (null message-sent-message-via))))
 	     (mail-buffers ()
-	      (when-let (bufs (cl-remove-if-not #'mail-buffer-p (buffer-list)))
+	      (when-let ((bufs (cl-remove-if-not #'mail-buffer-p (buffer-list))))
 		(mapcar 'buffer-name bufs))))
     (cl-letf (((symbol-function #'mml-attach-file) #'org-msg-attach-attach)
 	      ((symbol-function #'gnus-dired-mail-buffers) #'mail-buffers))
