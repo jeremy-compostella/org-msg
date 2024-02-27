@@ -1486,35 +1486,47 @@ HTML emails."
 	  nil)))
   "Additional expressions to highlight in OrgMsg mode.")
 
+(defun org-msg--mu4e-fun (name)
+  "Attempt to find the existing mu4e function suffixed with NAME."
+  (let ((funs (mapcar (lambda (prefix) (intern (concat prefix name)))
+		      '("mu4e~" "mu4e-" "mu4e--"))))
+    (car (cl-member-if #'fboundp funs))))
+
+(defun org-msg--mu4e-fun-call (name)
+  "Call the mu4e function suffixed with NAME if any."
+  (when-let ((fun (org-msg--mu4e-fun name)))
+    (funcall fun)))
+
 (defun org-msg-edit-mode-mu4e ()
   "Setup mu4e faces, addresses completion and run mu4e."
-  (mu4e~compose-remap-faces)
+  (org-msg--mu4e-fun-call "compose-remap-faces")
   (unless (mu4e-running-p)
-    (if (fboundp #'mu4e~start) (mu4e~start) (mu4e--start)))
+    (org-msg--mu4e-fun-call "start"))
   (when mu4e-compose-complete-addresses
-    (mu4e~compose-setup-completion))
+    (org-msg--mu4e-fun-call "compose-setup-completion"))
   ;; the following code is verbatim from mu4e-compose.el, `mu4e-compose-mode'
   ;; this will setup fcc (saving sent messages) and handle flags
   ;; (e.g. replied to)
   (add-hook 'message-send-hook
-	    (if (functionp #'mu4e~setup-fcc-message-sent-hook-fn)
-		#'mu4e~setup-fcc-message-sent-hook-fn
+	    (if-let ((fun (org-msg--mu4e-fun "setup-fcc-message-sent-hook-fn")))
+		fun
 	      (lambda ()
 		;; when in-reply-to was removed, remove references as well.
 		(when (eq mu4e-compose-type 'reply)
 		  (mu4e~remove-refs-maybe))
 		(when use-hard-newlines
-		  (mu4e-send-harden-newlines))
+		  (org-msg--mu4e-fun-call "send-harden-newlines"))
 		;; for safety, always save the draft before sending
 		(set-buffer-modified-p t)
 		(save-buffer)
-		(mu4e~compose-setup-fcc-maybe)
+		(org-msg--mu4e-fun-call "compose-setup-fcc-maybe")
 		(widen)))
 	    nil t)
   ;; when the message has been sent.
   (add-hook 'message-sent-hook
-	    (if (functionp #'mu4e~set-sent-handler-message-sent-hook-fn)
-		#'mu4e~set-sent-handler-message-sent-hook-fn
+	    (if-let ((fun (org-msg--mu4e-fun
+			   "set-sent-handler-message-sent-hook-fn")))
+		fun
 	      (lambda ()
 		(setq mu4e-sent-func 'mu4e-sent-handler)
 		(mu4e~proc-sent (buffer-file-name))))
