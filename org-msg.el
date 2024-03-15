@@ -1212,7 +1212,12 @@ MML tags."
 	  (if (org-msg-message-fetch-field "to")
 	      (org-msg-goto-body)
 	    (message-goto-to))
-	  (org-msg-edit-mode))
+	  ;; Preserve the buffer-local value of user-mail-address to
+	  ;; ensure that message IDs generated from it will be using a
+	  ;; domain name that matches the sender.
+	  (let ((address user-mail-address))
+	    (org-msg-edit-mode)
+	    (setq-local user-mail-address address)))
 	(set-buffer-modified-p nil)))))
 
 (defun org-msg-post-setup--if-not-reply (&rest args)
