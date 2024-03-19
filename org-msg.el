@@ -1526,6 +1526,14 @@ HTML emails."
   (interactive)
   (org-msg-mua-call 'edit-kill-buffer 'message-kill-buffer))
 
+(defun org-msg-insert-recipient-mailto()
+  "Insert a mailto link to a recipient."
+  (interactive)
+  (let* ((recipients (message-all-recipients))
+	 (name (completing-read "Recipient: " recipients nil t))
+	 (address (car (assoc-default name recipients))))
+    (org-insert-link nil (concat "mailto:" address) (concat "@" name))))
+
 (defvar org-msg-edit-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map org-mode-map)
@@ -1534,6 +1542,7 @@ HTML emails."
     (define-key map (kbd "C-c C-k") 'org-msg-edit-kill-buffer)
     (define-key map (kbd "C-c C-s") 'message-goto-subject)
     (define-key map (kbd "C-c C-b") 'org-msg-goto-body)
+    (define-key map (kbd "C-c @") 'org-msg-insert-recipient-mailto)
     (define-key map [remap org-attach] 'org-msg-attach)
     map)
   "Keymap for `org-msg-edit-mode'.")
