@@ -1504,33 +1504,8 @@ HTML emails."
     (org-msg--mu4e-fun-call "start"))
   (when mu4e-compose-complete-addresses
     (org-msg--mu4e-fun-call "compose-setup-completion"))
-  ;; the following code is verbatim from mu4e-compose.el, `mu4e-compose-mode'
-  ;; this will setup fcc (saving sent messages) and handle flags
-  ;; (e.g. replied to)
-  (add-hook 'message-send-hook
-	    (if-let ((fun (org-msg--mu4e-fun "setup-fcc-message-sent-hook-fn")))
-		fun
-	      (lambda ()
-		;; when in-reply-to was removed, remove references as well.
-		(when (eq mu4e-compose-type 'reply)
-		  (mu4e~remove-refs-maybe))
-		(when use-hard-newlines
-		  (org-msg--mu4e-fun-call "send-harden-newlines"))
-		;; for safety, always save the draft before sending
-		(set-buffer-modified-p t)
-		(save-buffer)
-		(org-msg--mu4e-fun-call "compose-setup-fcc-maybe")
-		(widen)))
-	    nil t)
-  ;; when the message has been sent.
-  (add-hook 'message-sent-hook
-	    (if-let ((fun (org-msg--mu4e-fun
-			   "set-sent-handler-message-sent-hook-fn")))
-		fun
-	      (lambda ()
-		(setq mu4e-sent-func 'mu4e-sent-handler)
-		(mu4e~proc-sent (buffer-file-name))))
-	    nil t))
+  (when-let ((sent-hook (org-msg--mu4e-fun "compose-before-send")))
+    (add-hook 'message-sent-hook sent-hook nil t)))
 
 (defalias 'org-msg-edit-kill-buffer-mu4e 'mu4e-message-kill-buffer)
 
