@@ -1528,6 +1528,7 @@ HTML emails."
     (define-key map [remap org-export-dispatch] 'org-msg-preview)
     (define-key map (kbd "C-c C-k") 'org-msg-edit-kill-buffer)
     (define-key map (kbd "C-c C-s") 'message-goto-subject)
+    (define-key map (kbd "C-c C-d") 'message-dont-send)
     (define-key map (kbd "C-c C-b") 'org-msg-goto-body)
     (define-key map (kbd "C-c @") 'org-msg-insert-recipient-mailto)
     (define-key map [remap org-attach] 'org-msg-attach)
