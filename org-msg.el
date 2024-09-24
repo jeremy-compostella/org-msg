@@ -1181,7 +1181,8 @@ area. If the current buffer contains MML tags,
 MML tags."
   (unless (eq major-mode 'org-msg-edit-mode)
     (message-goto-body)
-    (let* ((type (cond ((not (org-msg-message-fetch-field "subject")) 'new)
+    (let* ((type (cond ((org-msg-mua-call 'message-draft-p) 'new)
+		       ((not (org-msg-message-fetch-field "subject")) 'new)
 		       ((org-msg-mua-call 'article-htmlp) 'reply-to-html)
 		       ('reply-to-text)))
 	   (alternatives (org-msg-get-alternatives type)))
@@ -1221,6 +1222,7 @@ MML tags."
 	  (let ((address user-mail-address))
 	    (org-msg-edit-mode)
 	    (setq-local user-mail-address address)))
+	(org-msg-mua-call 'clear-message-draft-flag)
 	(set-buffer-modified-p nil)))))
 
 (defun org-msg-post-setup--if-not-reply (&rest args)
@@ -1404,14 +1406,31 @@ This function is used as an advice function of
     (remove-hook 'gnus-message-setup-hook 'org-msg-store-mml-buffers)
     (advice-remove 'gnus-icalendar-send-buffer-by-mail 'org-msg-inhibited)))
 
+(defvar org-msg--mu4e-message-draft-p nil)
+
+(defun org-msg-message-draft-p-mu4e ()
+  "Returns `t' if the message being processed is a draft."
+    org-msg--mu4e-message-draft-p)
+
+(defun org-msg-clear-message-draft-flag-mu4e ()
+  "Sets `org-msg--mu4e-message-draft-p' to nil."
+  (setq org-msg--mu4e-message-draft-p nil))
+
+(defun org-msg--mu4e-check-message-draft ()
+  "Check if the message about to be processed has a draft flag.
+This functions should only be used in a context where we have a mu4e message at point."
+  (when (member 'draft (mu4e-message-field-at-point :flags))
+    (setq org-msg--mu4e-message-draft-p t)))
+
 (defun org-msg-mode-mu4e ()
   "Setup the hook for mu4e mail user agent."
   (if org-msg-mode
       (progn (add-hook 'mu4e-compose-mode-hook 'org-msg-post-setup)
-	     (advice-add 'mu4e-icalendar-reply
-			 :around #'org-msg-inhibited))
+	     (advice-add 'mu4e-icalendar-reply :around #'org-msg-inhibited)
+	     (advice-add 'mu4e-compose-edit :before #'org-msg--mu4e-check-message-draft))
     (remove-hook 'mu4e-compose-mode-hook 'org-msg-post-setup)
-    (advice-remove 'mu4e-icalendar-reply 'org-msg-inhibited)))
+    (advice-remove 'mu4e-icalendar-reply 'org-msg-inhibited)
+    (advice-remove 'mu4e-compose-edit 'org-msg--mu4e-check-message-draft)))
 
 (defun org-msg-mode-notmuch ()
   "Setup the hook for notmuch mail user agent."
