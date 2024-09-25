@@ -245,10 +245,11 @@ Can be either `top-posting' or nil."
 	      ,@inline-src
 	      (margin . "0px")
 	      (font-size . "9pt")
-	      (font-family . "monospace")))
+	      (font-family . "monospace")
+              (padding . "1.2em")
+              (border-radius . "3px")))
     (div org-src-container ((margin-top . "10px")))
     (nil figure-number ,ftl-number)
-    (nil table-number)
     (caption nil ((text-align . "left")
 		  (background . ,theme-color)
 		  (color . "white")
@@ -259,7 +260,7 @@ Can be either `top-posting' or nil."
     (nil figure ,ftl-number)
     (nil org-src-name ,ftl-number)
 
-    (table nil (,@table ,line-height (border-collapse . "collapse")))
+    (table nil (,@table ,line-height (border-collapse . "collapse") (margin . "1em 0")))
     (th nil ((border . "1px solid white")
 	     (background-color . ,theme-color)
 	     (color . "white")
@@ -286,7 +287,11 @@ Can be either `top-posting' or nil."
     (p nil ((text-decoration . "none") (margin-bottom . "0px")
 	    (margin-top . "10px") (line-height . "11pt") ,font-size
 	    ,font-family))
-    (div nil (,@font (line-height . "11pt"))))))
+    (div nil (,@font (line-height . "11pt") (overflow . "auto")))
+    (nil nil content ((max-width . "69ch")
+                      (margin . "0 auto")))
+    (img nil nil ((width . "100%")
+                  (border-radius . "3px"))))))
 
 (defcustom org-msg-enforce-css org-msg-default-style
   "Define how to handle CSS style:
