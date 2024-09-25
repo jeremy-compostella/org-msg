@@ -542,18 +542,37 @@ expression into multi-level quote blocks."
 		(forward-char 1))
 	      (org-msg-ascii-blockquote (1+ level) new-begin new-end))))))))
 
-(defun org-msg-build-style (tag class css)
-  "Given a TAG and CLASS selector, it builds a CSS style string.
-This string can be used as a HTML style attribute value."
-  (cl-flet ((css-match-p (css)
-	      (or (and (eq tag (car css))
-		       (eq class (cadr css)))
-		  (and (not (car css))
-		       (eq class (cadr css)))
-		  (and (not (cadr css))
-		       (eq tag (car css))))))
+(defun org-msg-build-style (css &optional tag class id)
+  "Given a TAG, CLASS or ID selector, it builds a css style string.
+This string can be used as a HTML style attribute value.
+CSS is a list of type `org-msg-default-style'."
+
+  ;; This let block grabs every rule in the "CSS" variable and puts the 
+  ;; last element (which is the list of css rules) in the "car". The final
+  ;; format is ((css-rules) tag class id).
+  ;; This is done to avoid changing the format of `org-msg-default-style'
+  ;; to prevent breaking past user configurations.
+  (let ((res nil))
+    (dolist (elem css res)
+      (setq res (append res `(,(cons (car (last elem)) (butlast elem) )))))
+    (setq css res))
+    
+  (cl-flet ((css-match-p (css-rule)
+              ;; ID's are unique in css, so if we match an ID and the
+	      ;; ID is not nil we apply immediately.  
+              (or (and id
+		       (eq id (cadddr css-rule)))
+                  (and (or (and (eq tag (cadr css-rule))
+		                (eq class (caddr css-rule))
+		                (not (cadddr css-rule)))
+		           (and (not (cadr css-rule))
+		                (eq class (caddr css-rule))
+		                (not (cadddr css-rule)))
+		           (and (eq tag (cadr css-rule))
+                                (not (caddr css-rule))
+		                (not (cadddr css-rule))))))))
     (when-let ((sel (cl-remove-if-not #'css-match-p css))
-	       (props (apply 'append (mapcar 'caddr sel))))
+	       (props (apply 'append (mapcar 'car sel))))
       (org-msg-props-to-style props))))
 
 (defun org-msg-str-to-mailto (str css)
@@ -567,7 +586,7 @@ style mailto anchor link style appropriately."
     (let ((name-regexp "\\([[:alpha:]\"][[:alnum:] ,\"()@./-]+\\)")
 	  (mail-regexp "<\\([A-Za-z0-9@.-]+\\)>")
 	  (cursor (goto-char (point-min)))
-	  (style (org-msg-build-style 'a org-msg-reply-header-class css))
+	  (style (org-msg-build-style css 'a org-msg-reply-header-class))
 	  (res))
       (while (re-search-forward (concat name-regexp " " mail-regexp) nil t)
 	(unless (= (match-beginning 0) cursor)
@@ -636,9 +655,8 @@ is the XML tree and CSS the style."
       (assq-delete-all 'hr (assq 'body xml))
       (assq-delete-all 'align (cadr div))
       (setf (cadr div) (assq-delete-all 'style (cadr div)))
-      (let ((div-style (org-msg-build-style 'div
-					    org-msg-reply-header-class css))
-	    (p-style (org-msg-build-style 'p org-msg-reply-header-class css)))
+      (let ((div-style (org-msg-build-style css 'div org-msg-reply-header-class))
+	    (p-style (org-msg-build-style css 'p org-msg-reply-header-class)))
 	(when div-style
 	  (push `(style . ,div-style) (cadr div)))
 	(when p-style
@@ -798,10 +816,11 @@ absolute paths."
   (let ((css (org-msg-load-css)))
     (cl-flet ((enforce (xml)
 	       (let* ((tag (car xml))
-		      (tmp (assq 'class (cadr xml)))
-		      (class (when tmp
-			       (intern (cdr tmp))))
-		      (style (org-msg-build-style tag class css)))
+		      (class-alist (assq 'class (cadr xml)))
+		      (class (when class-alist (intern (cdr class-alist))))
+                      (id-alist (assq 'id (cadr xml)))
+                      (id (when id-alist (intern (cdr id-alist))))
+		      (style (org-msg-build-style css tag class id)))
 		 (when style
 		   (setf (cadr xml) (assq-delete-all 'style (cadr xml)))
 		   (setf (cadr xml) (assq-delete-all 'class (cadr xml)))
