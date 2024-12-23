@@ -1120,7 +1120,7 @@ a html mime part, it returns t, nil otherwise."
     (org-msg-article-htmlp)))
 
 (defun org-msg-article-htmlp-mu4e ()
-  (let ((msg mu4e-compose-parent-message))
+  (when-let ((msg mu4e-compose-parent-message))
     (with-temp-buffer
       (insert-file-contents-literally
        (mu4e-message-readable-path msg) nil nil nil t)
