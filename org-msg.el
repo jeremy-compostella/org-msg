@@ -1554,6 +1554,8 @@ Type \\[org-msg-attach] to call the dispatcher for attachment
   (if (not (equal mail-user-agent #'mu4e-user-agent))
       (add-hook 'message-sent-hook 'undo t t))
   (add-hook 'completion-at-point-functions 'message-completion-function nil t)
+  (add-hook 'after-change-functions #'message-strip-forbidden-properties
+	    nil 'local)
   (cond ((message-mail-alias-type-p 'abbrev) (mail-abbrevs-setup))
 	((message-mail-alias-type-p 'ecomplete) (ecomplete-setup)))
   (setq org-font-lock-keywords
