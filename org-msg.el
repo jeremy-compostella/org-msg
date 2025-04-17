@@ -361,6 +361,7 @@ want to reply to.  Both `gnus-article-browse-html-article' and
 images.  This function returns the absolute path of the HTML
 file."
   (let* ((browse-url-browser-function #'ignore)
+	 (browse-url-of-file #'ignore)
 	 (save (cl-copy-list gnus-article-browse-html-temp-list)))
     (cl-letf (((symbol-function 'gnus-summary-show-article) #'ignore))
       (save-window-excursion
