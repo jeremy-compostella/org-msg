@@ -1497,6 +1497,20 @@ HTML emails."
   (when-let ((fun (org-msg--mu4e-fun name)))
     (funcall fun)))
 
+(defun org-msg--widen-and-undo-after-sending ()
+  "Safely undo org-msg edits after sending.
+Widen first to avoid errors about undoing outside the visible region."
+  (when (eq major-mode 'org-msg-edit-mode)
+    (save-excursion
+      (save-restriction
+	(widen)
+	(let ((inhibit-redisplay t)
+	      (inhibit-read-only t))
+	  (condition-case nil
+	      (when buffer-undo-list
+		(undo))
+	    (error nil)))))))
+
 (defun org-msg-edit-mode-mu4e ()
   "Setup mu4e faces, addresses completion and run mu4e."
   (org-msg--mu4e-fun-call "compose-remap-faces")
@@ -1552,8 +1566,10 @@ Type \\[org-msg-attach] to call the dispatcher for attachment
 
 \\{org-msg-edit-mode-map}"
   (setq-local message-sent-message-via nil)
-  (add-hook 'message-send-hook 'org-msg-prepare-to-send nil t)
-  (add-hook 'message-sent-hook 'undo t t)
+  (add-hook 'message-send-hook #'org-msg-prepare-to-send nil t)
+  (add-hook 'message-sent-hook
+	    (lambda () (unless message-kill-buffer-on-exit
+		    (org-msg--widen-and-undo-after-sending))) t t)
   (add-hook 'completion-at-point-functions 'message-completion-function nil t)
   (cond ((message-mail-alias-type-p 'abbrev) (mail-abbrevs-setup))
 	((message-mail-alias-type-p 'ecomplete) (ecomplete-setup)))
