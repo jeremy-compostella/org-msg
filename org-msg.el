@@ -1498,19 +1498,21 @@ HTML emails."
   (when-let ((fun (org-msg--mu4e-fun name)))
     (funcall fun)))
 
-(defun org-msg--widen-and-undo-after-sending ()
-  "Safely undo org-msg edits after sending.
-Widen first to avoid errors about undoing outside the visible region."
-  (when (eq major-mode 'org-msg-edit-mode)
-    (save-excursion
-      (save-restriction
-	(widen)
-	(let ((inhibit-redisplay t)
-	      (inhibit-read-only t))
-	  (condition-case nil
-	      (when buffer-undo-list
-		(undo))
-	    (error nil)))))))
+(defun org-msg--widen-and-undo ()
+  "Safely undo org-msg edits.
+Widen first to avoid errors about undoing outside the visible region.
+Only performs undo if the buffer will not be killed after sending."
+  (unless message-kill-buffer-on-exit
+    (when (eq major-mode 'org-msg-edit-mode)
+      (save-excursion
+	(save-restriction
+	  (widen)
+	  (let ((inhibit-redisplay t)
+		(inhibit-read-only t))
+	    (condition-case nil
+		(when buffer-undo-list
+		  (undo))
+	      (error nil))))))))
 
 (defun org-msg-edit-mode-mu4e ()
   "Setup mu4e faces, addresses completion and run mu4e."
@@ -1566,9 +1568,7 @@ Type \\[org-msg-attach] to call the dispatcher for attachment
 \\{org-msg-edit-mode-map}"
   (setq-local message-sent-message-via nil)
   (add-hook 'message-send-hook #'org-msg-prepare-to-send nil t)
-  (add-hook 'message-sent-hook
-	    (lambda () (unless message-kill-buffer-on-exit
-		    (org-msg--widen-and-undo-after-sending))) t t)
+  (add-hook 'message-sent-hook #'org-msg--widen-and-undo t t)
   (add-hook 'completion-at-point-functions 'message-completion-function nil t)
   (add-hook 'after-change-functions #'message-strip-forbidden-properties
 	    nil 'local)
