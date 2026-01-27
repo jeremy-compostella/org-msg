@@ -755,7 +755,9 @@ absolute paths."
 	(with-current-buffer (org-ascii-export-as-ascii)
 	  (while (re-search-forward "<file:\\\([a-z0-9AZ_\./-]+\\\)>" nil t)
 	    (setf files (push (match-string-no-properties 1) files)))
-	  (cl-values (buffer-string) files))))))
+	  (let ((content (cl-values (buffer-string) files)))
+	    (kill-buffer)
+	    content))))))
 
 (defun org-msg-export-as-html (str)
   "Transform the Org STR into html."
