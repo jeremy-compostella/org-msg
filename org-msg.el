@@ -491,10 +491,15 @@ during email generation where '&apos;' is turned into
 		(push (cons (intern prop) val) props)))
 	    (dolist (sel selectors)
 	      (cl-multiple-value-bind (tag class) (split-string sel "\\.")
-		(push (list (if (string= tag "") nil (intern tag))
-			    (if (stringp class) (intern class) nil)
-			    props)
-		      l)))))))
+		(let ((tag (if (string= tag "") nil (intern tag)) )
+		      (class (if (stringp class) (intern class) nil)))
+		  (push
+		   ;; to match `org-msg-default-style' we need
+		   ;; (nil table-number) not (nil table-number nil)
+		   (if props
+		       (list tag class props)
+		       (list tag class))
+		   l))))))))
     l))
 
 (defun org-msg-css-file-to-list (file)
@@ -510,6 +515,33 @@ See `org-msg-css-to-list'."
 	      (concat (symbol-name (car css)) ":"
 		      (cdr css) ";")))
     (apply 'concat (mapcar #'css-str props))))
+
+(defun org-msg-css-to-string ()
+  "Combine `org-msg-load-css' (likely `org-msg-default-style') as CSS."
+  (let (allcss)
+    (dolist (el (org-msg-load-css) allcss)
+      (cl-multiple-value-bind (tag class css) el
+        (push (concat
+          (when tag (symbol-name tag))
+          (when class (concat "." (symbol-name class)))
+	  ;; reverse to match how list is stored
+          "{" (org-msg-props-to-style (reverse css)) "}")
+         allcss)))
+    (string-join allcss "\n")))
+
+(defun org-msg-css-to-file (fname)
+  "Format list output of `org-msg-load-css' as CSS and save to `FNAME'.
+By default, style is from `org-msg-default-style'
+and will be based on your current Emacs theme.
+Alternatively, `org-msg-enforce-css' could be set to `FNAME'
+to customize the your email's style based on the exported css file.
+Note: the file is parsed and styles are inlined for every html element.
+The file is NOT used like <link rel=... >."
+  (interactive "Fcss ouptut file:")
+  (with-temp-buffer
+    (insert (org-msg-css-to-string))
+    (write-file fname))
+  (find-file fname))
 
 (defsubst org-msg-in-quote-block ()
   "Whether point is in a quote block."
