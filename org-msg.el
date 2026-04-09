@@ -992,8 +992,8 @@ This function is a hook for `message-send-hook'."
           ;; about this if we are only sending text/plain
           (if (or (org-msg-mml-recursive-support)
                   (not (memq 'html alternatives)))
-              (progn
-                (when (or attachments mml)
+	      (progn
+                (when (or attachments (and (not (string-empty-p mml)) mml))
                   (mml-insert-multipart "mixed"))
                 (when (> (length org-msg-alternatives) 1)
                   (mml-insert-multipart "alternative"))
