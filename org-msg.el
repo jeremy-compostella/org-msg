@@ -900,8 +900,8 @@ other alternatives, it displays the exported result in a buffer."
 	  (t (with-current-buffer (get-buffer-create
 				   (format "*OrgMsg %s Preview*" (car alt)))
 	       (delete-region (point-min) (point-max))
-	       (insert (cdr alt)))
-	     (display-buffer (current-buffer))))))
+	       (insert (cdr alt))
+	       (display-buffer (current-buffer)))))))
 
 (defun org-msg-separate-mml-and-org (&optional preserve)
   "Separate the Org Mode and the MML content of the current buffer.
