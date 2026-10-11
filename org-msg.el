@@ -707,7 +707,9 @@ and include the SVG content into the email XML tree."
 		    (unless (or (url-type (url-generic-parse-url file))
 				(file-name-absolute-p file))
 		      (if-let ((path (get-file-path file)))
-			  (setcdr src path)
+			  (setcdr src (if (eq system-type 'windows-nt)
+					  (concat "file:///" path)
+					path))
 			(unless (y-or-n-p (format "'%s' Image is missing,\
  do you want to continue ?" file))
 			  (error "'%s' Image is missing" file)))))))
@@ -861,7 +863,8 @@ absolute paths."
 	     (original (when temp-files
 			 (org-msg-load-html-file (car temp-files)))))
 	(assq-delete-all 'h1 (assq 'div (assq 'body reply)))
-	(org-msg-xml-walk (assq 'body reply) #'fix-img-src)
+	(unless (eq system-type 'windows-nt)
+	  (org-msg-xml-walk (assq 'body reply) #'fix-img-src))
 	(when css
 	  (assq-delete-all 'style (assq 'head reply))
 	  (org-msg-xml-walk (assq 'body reply) #'enforce))
