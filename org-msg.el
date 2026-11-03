@@ -380,9 +380,14 @@ file."
        (mu4e-message-readable-path msg) nil nil nil t)
       (rfc2047-decode-region (point-min) (point-max))
       (let ((parts (mm-dissect-buffer t t))
-	    (header (cl-loop for field in '("from" "to" "cc" "date" "subject")
-			     when (message-fetch-field field)
-			     concat (format "%s: %s\n" (capitalize field) it))))
+	    (header (save-restriction
+		      ;; `message-fetch-field' searches the whole
+		      ;; accessible buffer: without narrowing, "From:"
+		      ;; lines quoted in the body join the real header.
+		      (message-narrow-to-head)
+		      (cl-loop for field in '("from" "to" "cc" "date" "subject")
+			       when (message-fetch-field field)
+			       concat (format "%s: %s\n" (capitalize field) it)))))
 
 	(when (and (bufferp (car parts))
 		   (stringp (car (mm-handle-type parts))))
