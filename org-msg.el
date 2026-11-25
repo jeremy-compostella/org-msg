@@ -893,9 +893,8 @@ other alternatives, it displays the exported result in a buffer."
 						    'xwidget-webkit-browse-url
 						  browse-url-browser-function))
 		   (tmp-file (make-temp-file "org-msg" nil ".html")))
-	       (with-temp-buffer
-		 (insert (cdr alt))
-		 (write-file tmp-file))
+	       (let ((coding-system-for-write 'utf-8))
+		 (write-region (cdr alt) nil tmp-file))
 	       (browse-url (concat "file://" tmp-file)))))
 	  (t (with-current-buffer (get-buffer-create
 				   (format "*OrgMsg %s Preview*" (car alt)))
